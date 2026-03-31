@@ -79,15 +79,6 @@ type ReportRecord = {
   updated_at: string;
 };
 
-type DraftRecord = {
-  id: number;
-  item_id: string | null;
-  action: string;
-  source: string | null;
-  source_ref: string | null;
-  created_at: string;
-};
-
 declare global {
   interface Window {
     turnstile?: {
@@ -277,9 +268,6 @@ export function QAWorkbench() {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [adminReports, setAdminReports] = useState<ReportRecord[]>([]);
   const [adminReportsLoading, setAdminReportsLoading] = useState(false);
-  const [deletedDraftIds, setDeletedDraftIds] = useState<Set<string>>(new Set());
-  const [adminDrafts, setAdminDrafts] = useState<DraftRecord[]>([]);
-  const [adminDraftsLoading, setAdminDraftsLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -578,10 +566,7 @@ export function QAWorkbench() {
     return sortRowsForDisplay(Array.from(merged.values()));
   }, [fuse, qaData, searchKeyword]);
 
-  const displayRows = useMemo(
-    () => (viewMode === "edit" ? filteredQA.filter((row) => !deletedDraftIds.has(row.id)) : filteredQA),
-    [deletedDraftIds, filteredQA, viewMode]
-  );
+  const displayRows = useMemo(() => filteredQA, [filteredQA]);
 
   const quickKeywordGroups = useMemo<Array<{ title: string; items: QuickKeyword[] }>>(() => {
     if (qaData.length === 0) {
@@ -1081,40 +1066,11 @@ export function QAWorkbench() {
       }
 
       setAdminReports((prev) => prev.filter((report) => report.id !== reportId));
-      setStatusText(action === "accept" ? "回報已採納並轉入草稿流程。" : "回報已駁回。");
+      setStatusText(action === "accept" ? "回報已採納。" : "回報已駁回。");
       setStatusTone("success");
     } catch {
       setStatusText("處理回報失敗。");
       setStatusTone("warning");
-    }
-  };
-
-  const loadAdminDrafts = async () => {
-    if (!adminApiKey.trim()) {
-      setStatusText("請先填入管理 API Key。");
-      setStatusTone("warning");
-      return;
-    }
-
-    setAdminDraftsLoading(true);
-    try {
-      const response = await fetch("/api/admin/drafts", {
-        headers: {
-          "x-admin-key": adminApiKey.trim()
-        }
-      });
-      const result = (await response.json()) as { error?: string; drafts?: DraftRecord[] };
-      if (!response.ok) {
-        setStatusText(result.error || "載入草稿失敗。");
-        setStatusTone("warning");
-        return;
-      }
-      setAdminDrafts(result.drafts ?? []);
-    } catch {
-      setStatusText("載入草稿失敗。");
-      setStatusTone("warning");
-    } finally {
-      setAdminDraftsLoading(false);
     }
   };
 
@@ -1138,19 +1094,17 @@ export function QAWorkbench() {
     }
 
     try {
-      const response = await fetch("/api/admin/drafts", {
+      const response = await fetch("/api/admin/reports?status=pending", {
         headers: {
           "x-admin-key": key
         }
       });
-      const result = (await response.json()) as { error?: string; drafts?: DraftRecord[] };
+      const result = (await response.json()) as { error?: string };
       if (!response.ok) {
         setStatusText(result.error || "管理 API Key 無效，無法進入編輯模式。");
         setStatusTone("warning");
         return;
       }
-
-      setAdminDrafts(result.drafts ?? []);
       setIsAdminUnlocked(true);
       setViewMode("edit");
       setStatusText("管理員驗證成功，已進入編輯模式。");
@@ -1161,49 +1115,15 @@ export function QAWorkbench() {
     }
   };
 
-  const draftDeleteRow = async (row: QAItem) => {
-    if (!adminApiKey.trim()) {
-      setStatusText("請先填入管理 API Key。");
-      setStatusTone("warning");
-      return;
-    }
-
+  const deleteRow = (row: QAItem) => {
     const ok = window.confirm("確定刪除此題？");
     if (!ok) {
       return;
     }
 
-    try {
-      const response = await fetch("/api/admin/drafts/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-key": adminApiKey.trim()
-        },
-        body: JSON.stringify({
-          itemId: row.id,
-          beforePayload: {
-            question: row.question,
-            answer: row.answer,
-            tag: row.tag || null
-          }
-        })
-      });
-      const result = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setStatusText(result.error || "建立刪除草稿失敗。");
-        setStatusTone("warning");
-        return;
-      }
-
-      setDeletedDraftIds((prev) => new Set(prev).add(row.id));
-      setStatusText("已加入刪除草稿，待發佈生效。");
-      setStatusTone("success");
-      loadAdminDrafts();
-    } catch {
-      setStatusText("建立刪除草稿失敗。");
-      setStatusTone("warning");
-    }
+    setQaData((prev) => prev.filter((item) => item.id !== row.id));
+    setStatusText("已刪除題目。");
+    setStatusTone("success");
   };
 
   const resetLocalCacheAndReloadSeed = async () => {
@@ -1674,7 +1594,7 @@ export function QAWorkbench() {
                                   修改題目/答案
                                 </button>
                                 <button
-                                  onClick={() => draftDeleteRow(row)}
+                                  onClick={() => deleteRow(row)}
                                   className={`${buttonBase} border border-rose-400/40 bg-rose-500/15 px-3 py-1.5 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
                                 >
                                   刪除
@@ -1781,7 +1701,7 @@ export function QAWorkbench() {
                               修改題目/答案
                             </button>
                             <button
-                              onClick={() => draftDeleteRow(row)}
+                              onClick={() => deleteRow(row)}
                               className={`${buttonBase} w-full border border-rose-400/40 bg-rose-500/15 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
                             >
                               刪除
@@ -2063,32 +1983,6 @@ export function QAWorkbench() {
             </div>
           ) : null}
 
-          {viewMode === "edit" && isAdminUnlocked ? (
-            <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium tracking-wide text-slate-300">草稿變更</p>
-                <button
-                  type="button"
-                  onClick={loadAdminDrafts}
-                  disabled={adminDraftsLoading}
-                  className="rounded-md border border-slate-600 px-2 py-1 text-[11px] text-slate-300 hover:text-white"
-                >
-                  {adminDraftsLoading ? "刷新中..." : "刷新"}
-                </button>
-              </div>
-              <div className="grid max-h-40 gap-2 overflow-y-auto">
-                {adminDrafts.map((draft) => (
-                  <div key={`draft-${draft.id}`} className="rounded-lg border border-slate-700 bg-surface-900 p-2">
-                    <p className="text-[11px] text-slate-200">
-                      #{draft.id} {draft.action} / item: {draft.item_id ?? "(null)"}
-                    </p>
-                    <p className="text-[10px] text-slate-500">{new Date(draft.created_at).toLocaleString("zh-TW")}</p>
-                  </div>
-                ))}
-                {adminDrafts.length === 0 ? <p className="text-xs text-slate-500">目前沒有草稿</p> : null}
-              </div>
-            </div>
-          ) : null}
 
           <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
             <p className="text-xs font-medium tracking-wide text-slate-300">詩詞2字（重複片段）</p>
