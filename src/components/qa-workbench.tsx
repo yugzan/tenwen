@@ -1174,6 +1174,46 @@ export function QAWorkbench() {
     }
   };
 
+  const resetLocalCacheAndReloadSeed = async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+      setQaData([]);
+      setEditingRowId(null);
+      setDraftQuestion("");
+      setDraftAnswer("");
+      setDraftTag("");
+      setSearchKeyword("");
+
+      const response = await fetch("/qa_seed.csv", { cache: "no-store" });
+      if (!response.ok) {
+        setStatusText("已清除本機快取，但公開題庫載入失敗。");
+        setStatusTone("warning");
+        return;
+      }
+
+      const text = await response.text();
+      const { rawRows, headers } = await parseCsvText(text);
+      const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
+      if (!map) {
+        setStatusText("已清除本機快取，但公開題庫欄位格式無法辨識。");
+        setStatusTone("warning");
+        return;
+      }
+
+      const { rows } = normalizeRows(rawRows, map);
+      setQaData(rows);
+      setStatusText(`已重置快取並重新載入公開題庫 ${rows.length} 筆。`);
+      setStatusTone("success");
+    } catch {
+      setStatusText("重置本機快取失敗，請稍後再試。");
+      setStatusTone("warning");
+    }
+  };
+
   return (
     <main
       className="flex min-h-screen w-full flex-col px-4 pb-40 pt-4 sm:px-6 lg:pb-10"
@@ -1235,7 +1275,18 @@ export function QAWorkbench() {
       </section>
 
       <section className="mt-4 grid gap-4">
-        <div className={`rounded-xl border px-3 py-2 text-sm ${statusToneStyles[statusTone]}`}>{statusText}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className={`flex-1 rounded-xl border px-3 py-2 text-sm ${statusToneStyles[statusTone]}`}>{statusText}</div>
+          <button
+            type="button"
+            onClick={() => {
+              void resetLocalCacheAndReloadSeed();
+            }}
+            className="h-9 rounded-xl border border-slate-500 bg-surface-700 px-3 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
+          >
+            重置快取並重載題庫
+          </button>
+        </div>
 
         <div className="sticky top-2 z-20 rounded-2xl border border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur">
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
