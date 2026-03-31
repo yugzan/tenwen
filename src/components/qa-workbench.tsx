@@ -229,6 +229,8 @@ export function QAWorkbench() {
   const mobileSearchPanelRef = useRef<HTMLDivElement | null>(null);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetRef = useRef<unknown>(null);
+  const swipeStartXRef = useRef<number | null>(null);
+  const swipeStartYRef = useRef<number | null>(null);
 
   const [qaData, setQaData] = useState<QAItem[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -398,6 +400,65 @@ export function QAWorkbench() {
 
     void loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (window.innerWidth >= 1024) {
+        return;
+      }
+      if (event.touches.length !== 1) {
+        return;
+      }
+      const touch = event.touches[0];
+      swipeStartXRef.current = touch.clientX;
+      swipeStartYRef.current = touch.clientY;
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (window.innerWidth >= 1024) {
+        return;
+      }
+      if (event.changedTouches.length !== 1) {
+        return;
+      }
+
+      const startX = swipeStartXRef.current;
+      const startY = swipeStartYRef.current;
+      swipeStartXRef.current = null;
+      swipeStartYRef.current = null;
+      if (startX === null || startY === null) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      if (Math.abs(deltaY) > 50) {
+        return;
+      }
+
+      const edgeThreshold = 28;
+      if (!mobileQuickDrawerOpen && startX >= window.innerWidth - edgeThreshold && deltaX <= -45) {
+        setMobileQuickDrawerOpen(true);
+        return;
+      }
+
+      if (mobileQuickDrawerOpen && deltaX >= 45) {
+        setMobileQuickDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [mobileQuickDrawerOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1928,7 +1989,7 @@ export function QAWorkbench() {
 
       <aside className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur lg:hidden">
         <div className="flex w-full flex-col gap-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
             <input
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
@@ -1941,6 +2002,13 @@ export function QAWorkbench() {
               className="h-12 rounded-xl border border-slate-500 bg-surface-700 px-3 text-sm text-slate-300 transition hover:border-slate-300 hover:text-white active:scale-95"
             >
               清除
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileQuickDrawerOpen(true)}
+              className="h-12 rounded-xl border border-accent-400/70 bg-accent-500 px-3 text-sm font-semibold text-slate-950 transition active:scale-95"
+            >
+              快捷
             </button>
           </div>
         </div>
@@ -1956,16 +2024,6 @@ export function QAWorkbench() {
           className="fixed bottom-20 right-3 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
         >
           回到查詢
-        </button>
-      ) : null}
-
-      {!isDesktop ? (
-        <button
-          type="button"
-          onClick={() => setMobileQuickDrawerOpen(true)}
-          className="fixed bottom-20 left-3 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
-        >
-          快捷
         </button>
       ) : null}
 
