@@ -78,6 +78,15 @@ type ReportRecord = {
   updated_at: string;
 };
 
+type DraftRecord = {
+  id: number;
+  item_id: string | null;
+  action: string;
+  source: string | null;
+  source_ref: string | null;
+  created_at: string;
+};
+
 declare global {
   interface Window {
     turnstile?: {
@@ -254,6 +263,8 @@ export function QAWorkbench() {
   const [selectedBigram, setSelectedBigram] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<QAItem | null>(null);
+  const [reportCurrentQuestion, setReportCurrentQuestion] = useState("");
+  const [reportCurrentAnswer, setReportCurrentAnswer] = useState("");
   const [reportSuggestedQuestion, setReportSuggestedQuestion] = useState("");
   const [reportSuggestedAnswer, setReportSuggestedAnswer] = useState("");
   const [reportNote, setReportNote] = useState("");
@@ -262,6 +273,9 @@ export function QAWorkbench() {
   const [adminApiKey, setAdminApiKey] = useState("");
   const [adminReports, setAdminReports] = useState<ReportRecord[]>([]);
   const [adminReportsLoading, setAdminReportsLoading] = useState(false);
+  const [deletedDraftIds, setDeletedDraftIds] = useState<Set<string>>(new Set());
+  const [adminDrafts, setAdminDrafts] = useState<DraftRecord[]>([]);
+  const [adminDraftsLoading, setAdminDraftsLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -515,6 +529,11 @@ export function QAWorkbench() {
 
     return sortRowsForDisplay(Array.from(merged.values()));
   }, [fuse, qaData, searchKeyword]);
+
+  const displayRows = useMemo(
+    () => (viewMode === "edit" ? filteredQA.filter((row) => !deletedDraftIds.has(row.id)) : filteredQA),
+    [deletedDraftIds, filteredQA, viewMode]
+  );
 
   const quickKeywordGroups = useMemo<Array<{ title: string; items: QuickKeyword[] }>>(() => {
     if (qaData.length === 0) {
@@ -816,13 +835,13 @@ export function QAWorkbench() {
       return;
     }
 
-    if (filteredQA.length === 0) {
+    if (displayRows.length === 0) {
       setStatusText("目前搜尋結果為 0，無法批次補標。");
       setStatusTone("warning");
       return;
     }
 
-    const changed = applyBatchTagToRows(filteredQA, targetTag);
+    const changed = applyBatchTagToRows(displayRows, targetTag);
     if (changed === 0) {
       setStatusText("目前搜尋結果已包含該標記，沒有需要更新的題目。");
       setStatusTone("info");
@@ -884,8 +903,11 @@ export function QAWorkbench() {
     setStatusTone("success");
   };
 
-  const openReportModal = (row: QAItem) => {
-    setReportTarget(row);
+  const openReportModal = (row?: QAItem) => {
+    const target = row ?? null;
+    setReportTarget(target);
+    setReportCurrentQuestion(target?.question ?? "");
+    setReportCurrentAnswer(target?.answer ?? "");
     setReportSuggestedQuestion("");
     setReportSuggestedAnswer("");
     setReportNote("");
@@ -899,17 +921,19 @@ export function QAWorkbench() {
     }
     setReportModalOpen(false);
     setReportTarget(null);
+    setReportCurrentQuestion("");
+    setReportCurrentAnswer("");
   };
 
   const submitReport = async () => {
-    if (!reportTarget || reportSubmitting) {
+    if (reportSubmitting) {
       return;
     }
 
     const payload: ReportPayload = {
-      itemId: reportTarget.id,
-      currentQuestion: reportTarget.question,
-      currentAnswer: reportTarget.answer,
+      itemId: reportTarget?.id ?? "",
+      currentQuestion: reportCurrentQuestion.trim(),
+      currentAnswer: reportCurrentAnswer.trim(),
       suggestedQuestion: reportSuggestedQuestion.trim(),
       suggestedAnswer: reportSuggestedAnswer.trim(),
       note: reportNote.trim(),
@@ -946,6 +970,8 @@ export function QAWorkbench() {
       setStatusTone("success");
       setReportModalOpen(false);
       setReportTarget(null);
+      setReportCurrentQuestion("");
+      setReportCurrentAnswer("");
     } catch {
       setStatusText("回報送出失敗，請稍後再試。");
       setStatusTone("warning");
@@ -1015,6 +1041,80 @@ export function QAWorkbench() {
     }
   };
 
+  const loadAdminDrafts = async () => {
+    if (!adminApiKey.trim()) {
+      setStatusText("請先填入管理 API Key。");
+      setStatusTone("warning");
+      return;
+    }
+
+    setAdminDraftsLoading(true);
+    try {
+      const response = await fetch("/api/admin/drafts", {
+        headers: {
+          "x-admin-key": adminApiKey.trim()
+        }
+      });
+      const result = (await response.json()) as { error?: string; drafts?: DraftRecord[] };
+      if (!response.ok) {
+        setStatusText(result.error || "載入草稿失敗。");
+        setStatusTone("warning");
+        return;
+      }
+      setAdminDrafts(result.drafts ?? []);
+    } catch {
+      setStatusText("載入草稿失敗。");
+      setStatusTone("warning");
+    } finally {
+      setAdminDraftsLoading(false);
+    }
+  };
+
+  const draftDeleteRow = async (row: QAItem) => {
+    if (!adminApiKey.trim()) {
+      setStatusText("請先填入管理 API Key。");
+      setStatusTone("warning");
+      return;
+    }
+
+    const ok = window.confirm("確定刪除此題？");
+    if (!ok) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/drafts/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminApiKey.trim()
+        },
+        body: JSON.stringify({
+          itemId: row.id,
+          beforePayload: {
+            question: row.question,
+            answer: row.answer,
+            tag: row.tag || null
+          }
+        })
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setStatusText(result.error || "建立刪除草稿失敗。");
+        setStatusTone("warning");
+        return;
+      }
+
+      setDeletedDraftIds((prev) => new Set(prev).add(row.id));
+      setStatusText("已加入刪除草稿，待發佈生效。");
+      setStatusTone("success");
+      loadAdminDrafts();
+    } catch {
+      setStatusText("建立刪除草稿失敗。");
+      setStatusTone("warning");
+    }
+  };
+
   return (
     <main
       className="flex min-h-screen w-full flex-col px-4 pb-40 pt-4 sm:px-6 lg:pb-10"
@@ -1076,7 +1176,7 @@ export function QAWorkbench() {
               className="h-11 rounded-xl border border-slate-600 bg-surface-800 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
             />
             <div className="flex h-11 items-center rounded-xl border border-slate-700 bg-surface-800 px-3 text-sm text-slate-300">
-              共 <span className="mx-1 font-semibold text-slate-100">{filteredQA.length}</span> / {qaData.length} 筆
+              共 <span className="mx-1 font-semibold text-slate-100">{displayRows.length}</span> / {qaData.length} 筆
             </div>
             <button
               type="button"
@@ -1086,6 +1186,17 @@ export function QAWorkbench() {
               清除
             </button>
           </div>
+          {viewMode === "query" ? (
+            <div className="mt-2 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => openReportModal()}
+                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
+              >
+                新增回報（題目不在列表時）
+              </button>
+            </div>
+          ) : null}
 
           {middleQuickGroups.length > 0 ? (
             <div className="mt-3 grid gap-2">
@@ -1296,13 +1407,13 @@ export function QAWorkbench() {
       </section>
 
       <section className="mt-5">
-        {filteredQA.length === 0 ? (
+        {displayRows.length === 0 ? (
           <div className="rounded-2xl border border-slate-700 bg-surface-800 px-4 py-12 text-center text-slate-400">
             沒有符合條件的資料，試試不同關鍵字。
           </div>
         ) : null}
 
-        {filteredQA.length > 0 ? (
+        {displayRows.length > 0 ? (
           <>
             <div className="hidden overflow-hidden rounded-2xl border border-slate-700 bg-surface-800 md:block">
               <table className="w-full table-fixed border-collapse text-left text-sm">
@@ -1316,7 +1427,7 @@ export function QAWorkbench() {
                 </thead>
 
                 <tbody>
-                  {filteredQA.map((row) => {
+                  {displayRows.map((row) => {
                     const isEditing = editingRowId === row.id;
                     const tags = parseTags(row.tag);
 
@@ -1394,29 +1505,37 @@ export function QAWorkbench() {
                           <td className="px-4 py-3">
                             {isEditing ? (
                               <div className="flex gap-2">
-                                <button
-                                  onClick={() => saveQA(row.id)}
-                                  className={`${buttonBase} bg-emerald-500 px-3 py-1.5 text-slate-950 hover:bg-emerald-400`}
+                              <button
+                                onClick={() => saveQA(row.id)}
+                                className={`${buttonBase} bg-emerald-500 px-3 py-1.5 text-slate-950 hover:bg-emerald-400`}
                                 >
                                   儲存
                                 </button>
+                              <button
+                                onClick={cancelEditing}
+                                className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-200 hover:border-slate-300`}
+                              >
+                                取消
+                              </button>
+                            </div>
+                          ) : (
+                              <div className="flex flex-col gap-2">
                                 <button
-                                  onClick={cancelEditing}
-                                  className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-200 hover:border-slate-300`}
+                                  onClick={() => startEditing(row)}
+                                  className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-100 hover:border-accent-400 hover:text-white`}
                                 >
-                                  取消
+                                  修改題目/答案
+                                </button>
+                                <button
+                                  onClick={() => draftDeleteRow(row)}
+                                  className={`${buttonBase} border border-rose-400/40 bg-rose-500/15 px-3 py-1.5 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
+                                >
+                                  刪除
                                 </button>
                               </div>
-                            ) : (
-                              <button
-                                onClick={() => startEditing(row)}
-                                className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-100 hover:border-accent-400 hover:text-white`}
-                              >
-                                修改題目/答案
-                              </button>
-                            )}
-                          </td>
-                        ) : null}
+                          )}
+                        </td>
+                      ) : null}
                       </tr>
                     );
                   })}
@@ -1425,7 +1544,7 @@ export function QAWorkbench() {
             </div>
 
             <div className="grid gap-3 md:hidden">
-              {filteredQA.map((row) => {
+              {displayRows.map((row) => {
                 const isEditing = editingRowId === row.id;
                 const tags = parseTags(row.tag);
 
@@ -1510,12 +1629,20 @@ export function QAWorkbench() {
                             </button>
                           </>
                         ) : (
-                          <button
-                            onClick={() => startEditing(row)}
-                            className={`${buttonBase} w-full border border-slate-500 bg-surface-700 text-slate-100 hover:border-accent-400 hover:text-white`}
-                          >
-                            修改題目/答案
-                          </button>
+                          <div className="grid w-full gap-2">
+                            <button
+                              onClick={() => startEditing(row)}
+                              className={`${buttonBase} w-full border border-slate-500 bg-surface-700 text-slate-100 hover:border-accent-400 hover:text-white`}
+                            >
+                              修改題目/答案
+                            </button>
+                            <button
+                              onClick={() => draftDeleteRow(row)}
+                              className={`${buttonBase} w-full border border-rose-400/40 bg-rose-500/15 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
+                            >
+                              刪除
+                            </button>
+                          </div>
                         )}
                       </div>
                     ) : null}
@@ -1527,7 +1654,7 @@ export function QAWorkbench() {
         ) : null}
       </section>
 
-      {reportModalOpen && reportTarget ? (
+      {reportModalOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-surface-900 p-4 shadow-2xl">
             <div className="flex items-center justify-between">
@@ -1544,11 +1671,23 @@ export function QAWorkbench() {
             <div className="mt-3 grid gap-2">
               <label className="grid gap-1 text-xs">
                 <span className="text-slate-400">目前題目</span>
-                <textarea value={reportTarget.question} readOnly className="min-h-16 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200" />
+                <textarea
+                  value={reportCurrentQuestion}
+                  readOnly={Boolean(reportTarget)}
+                  onChange={(event) => setReportCurrentQuestion(event.target.value)}
+                  placeholder="若非對應當前題目，可自行填寫"
+                  className="min-h-16 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200"
+                />
               </label>
               <label className="grid gap-1 text-xs">
                 <span className="text-slate-400">目前答案</span>
-                <textarea value={reportTarget.answer} readOnly className="min-h-14 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200" />
+                <textarea
+                  value={reportCurrentAnswer}
+                  readOnly={Boolean(reportTarget)}
+                  onChange={(event) => setReportCurrentAnswer(event.target.value)}
+                  placeholder="若非對應當前題目，可自行填寫"
+                  className="min-h-14 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200"
+                />
               </label>
               <label className="grid gap-1 text-xs">
                 <span className="text-slate-400">建議題目（可選）</span>
@@ -1647,6 +1786,15 @@ export function QAWorkbench() {
         />
         <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
           <p className="text-sm font-semibold tracking-wide text-slate-100">快捷面板</p>
+          {viewMode === "query" ? (
+            <button
+              type="button"
+              onClick={() => openReportModal()}
+              className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
+            >
+              題目不在結果？點這裡新增回報
+            </button>
+          ) : null}
 
           {viewMode === "edit" ? (
             <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
@@ -1674,7 +1822,7 @@ export function QAWorkbench() {
               onClick={applyQuickBatchTag}
               className={`${buttonBase} h-10 bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95`}
             >
-              套用到目前結果 ({filteredQA.length})
+              套用到目前結果 ({displayRows.length})
             </button>
 
             <div className="mt-1 grid gap-2 rounded-xl border border-slate-700 bg-surface-900 p-2">
@@ -1752,6 +1900,33 @@ export function QAWorkbench() {
                   </div>
                 ))}
                 {adminReports.length === 0 ? <p className="text-xs text-slate-500">目前沒有待審回報</p> : null}
+              </div>
+            </div>
+          ) : null}
+
+          {viewMode === "edit" ? (
+            <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium tracking-wide text-slate-300">草稿變更</p>
+                <button
+                  type="button"
+                  onClick={loadAdminDrafts}
+                  disabled={adminDraftsLoading}
+                  className="rounded-md border border-slate-600 px-2 py-1 text-[11px] text-slate-300 hover:text-white"
+                >
+                  {adminDraftsLoading ? "刷新中..." : "刷新"}
+                </button>
+              </div>
+              <div className="grid max-h-40 gap-2 overflow-y-auto">
+                {adminDrafts.map((draft) => (
+                  <div key={`draft-${draft.id}`} className="rounded-lg border border-slate-700 bg-surface-900 p-2">
+                    <p className="text-[11px] text-slate-200">
+                      #{draft.id} {draft.action} / item: {draft.item_id ?? "(null)"}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{new Date(draft.created_at).toLocaleString("zh-TW")}</p>
+                  </div>
+                ))}
+                {adminDrafts.length === 0 ? <p className="text-xs text-slate-500">目前沒有草稿</p> : null}
               </div>
             </div>
           ) : null}
