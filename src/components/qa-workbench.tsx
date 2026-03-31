@@ -1283,7 +1283,10 @@ export function QAWorkbench() {
       <section className="-mx-4 border-b border-slate-700/60 bg-surface-900/95 px-4 pb-4 pt-4 sm:-mx-6 sm:px-6">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-lg font-semibold tracking-wide text-slate-100 sm:text-xl">題庫搜尋與修改工作台</h1>
+            <div className="grid gap-1">
+              <h1 className="text-lg font-semibold tracking-wide text-slate-100 sm:text-xl">題庫搜尋與修改工作台</h1>
+              <p className="text-xs text-slate-400">Powered by 旅行散仙</p>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
@@ -1370,8 +1373,8 @@ export function QAWorkbench() {
           </div>
 
           {middleQuickGroups.length > 0 ? (
-            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2">
-              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕</summary>
+            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2" defaultOpen={!isDesktop}>
+              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕（點我展開/收合）</summary>
               <div className="mt-2 grid gap-2">
                 {middleQuickGroups.map((group) => (
                   <div key={`middle-${group.title}`} className="flex flex-wrap items-center gap-2">
@@ -1924,6 +1927,7 @@ export function QAWorkbench() {
 
       <aside className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur lg:hidden">
         <div className="flex w-full flex-col gap-2">
+          <p className="text-[11px] text-slate-400">快捷按鈕在上方「快捷按鈕（點我展開/收合）」</p>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <input
               value={searchKeyword}
