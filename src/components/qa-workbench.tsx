@@ -310,7 +310,7 @@ export function QAWorkbench() {
         }
 
         setQaData(rows);
-        setStatusText(`已自動載入公開題庫 ${rows.length} 筆資料。`);
+        setStatusText(`已載入 ${rows.length} 筆資料。`);
         setStatusTone("info");
         return true;
       } catch {
@@ -356,7 +356,7 @@ export function QAWorkbench() {
 
       if (normalized.length > 0) {
         setQaData(normalized);
-        setStatusText(`已從瀏覽器載入 ${normalized.length} 筆題庫資料。`);
+        setStatusText(`已載入 ${normalized.length} 筆資料。`);
         setStatusTone("info");
       } else {
         void loadSeedData();
@@ -1119,7 +1119,18 @@ export function QAWorkbench() {
   };
 
   const enterEditMode = async () => {
-    const key = adminApiKey.trim();
+    let key = adminApiKey.trim();
+    if (!key && typeof window !== "undefined") {
+      const promptValue = window.prompt("請輸入管理 API Key");
+      if (!promptValue) {
+        setStatusText("未輸入 API Key，維持查詢模式。");
+        setStatusTone("info");
+        return;
+      }
+      key = promptValue.trim();
+      setAdminApiKey(key);
+    }
+
     if (!key) {
       setStatusText("請先輸入管理 API Key 才能進入編輯模式。");
       setStatusTone("warning");
@@ -1211,7 +1222,7 @@ export function QAWorkbench() {
 
       const response = await fetch("/qa_seed.csv", { cache: "no-store" });
       if (!response.ok) {
-        setStatusText("已清除本機快取，但公開題庫載入失敗。");
+        setStatusText("已清快取，但載入失敗。");
         setStatusTone("warning");
         return;
       }
@@ -1220,17 +1231,17 @@ export function QAWorkbench() {
       const { rawRows, headers } = await parseCsvText(text);
       const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
       if (!map) {
-        setStatusText("已清除本機快取，但公開題庫欄位格式無法辨識。");
+        setStatusText("已清快取，但欄位格式無法辨識。");
         setStatusTone("warning");
         return;
       }
 
       const { rows } = normalizeRows(rawRows, map);
       setQaData(rows);
-      setStatusText(`已重置快取並重新載入公開題庫 ${rows.length} 筆。`);
+      setStatusText(`已重新載入 ${rows.length} 筆資料。`);
       setStatusTone("success");
     } catch {
-      setStatusText("重置本機快取失敗，請稍後再試。");
+      setStatusText("重新載入失敗，請稍後再試。");
       setStatusTone("warning");
     }
   };
@@ -1247,48 +1258,16 @@ export function QAWorkbench() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-lg font-semibold tracking-wide text-slate-100 sm:text-xl">題庫搜尋與修改工作台</h1>
             <div className="flex items-center gap-2">
-              <div className="inline-flex rounded-xl border border-slate-600 bg-surface-800 p-1">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("query")}
-                  className={`rounded-lg px-3 py-1.5 text-xs transition ${
-                    viewMode === "query" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  查詢模式
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void enterEditMode();
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-xs transition ${
-                    viewMode === "edit" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  編輯模式
-                </button>
-              </div>
-              {viewMode === "query" ? (
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={adminApiKey}
-                  onChange={(event) => setAdminApiKey(event.target.value)}
-                  placeholder="管理 API Key（進入編輯用）"
-                  className="h-10 w-52 rounded-xl border border-slate-600 bg-surface-800 px-3 text-xs text-slate-200 outline-none ring-accent-400 focus:ring-2"
-                />
-              ) : null}
               <button
                 onClick={() => {
                   exportCsv(qaData);
-                  setStatusText("已匯出最新題庫 CSV。");
+                  setStatusText("已下載 CSV。");
                   setStatusTone("success");
                 }}
                 disabled={qaData.length === 0}
                 className={`${buttonBase} bg-accent-500 text-slate-950 hover:bg-accent-400`}
               >
-                下載最新題庫
+                下載CSV
               </button>
             </div>
           </div>
@@ -1305,7 +1284,7 @@ export function QAWorkbench() {
             }}
             className="h-9 rounded-xl border border-slate-500 bg-surface-700 px-3 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
           >
-            重置快取並重載題庫
+            重新載入
           </button>
         </div>
 
@@ -1329,37 +1308,62 @@ export function QAWorkbench() {
               清除
             </button>
           </div>
-          {viewMode === "query" ? (
-            <div className="mt-2 flex items-center justify-end">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-600 bg-surface-800 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("query")}
+                className={`rounded-md px-2 py-1 text-[11px] transition ${
+                  viewMode === "query" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                查詢
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void enterEditMode();
+                }}
+                className={`rounded-md px-2 py-1 text-[11px] transition ${
+                  viewMode === "edit" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                編輯
+              </button>
+            </div>
+            {viewMode === "query" ? (
               <button
                 type="button"
                 onClick={() => openReportModal()}
-                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
+                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-[11px] text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
               >
-                新增回報（題目不在列表時）
+                新增回報
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           {middleQuickGroups.length > 0 ? (
-            <div className="mt-3 grid gap-2">
-              {middleQuickGroups.map((group) => (
-                <div key={`middle-${group.title}`} className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-400">{group.title}</span>
-                  {group.items.map((keyword) => (
-                    <button
-                      key={`middle-${group.title}-${keyword.value}`}
-                      type="button"
-                      onClick={() => setSearchKeyword(keyword.value)}
-                      className="h-8 rounded-lg border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
-                    >
-                      {keyword.value}
-                      <span className="ml-1 text-slate-400">({keyword.count})</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
+            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2">
+              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕</summary>
+              <div className="mt-2 grid gap-2">
+                {middleQuickGroups.map((group) => (
+                  <div key={`middle-${group.title}`} className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-slate-400">{group.title}</span>
+                    {group.items.map((keyword) => (
+                      <button
+                        key={`middle-${group.title}-${keyword.value}`}
+                        type="button"
+                        onClick={() => setSearchKeyword(keyword.value)}
+                        className="h-8 rounded-lg border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
+                      >
+                        {keyword.value}
+                        <span className="ml-1 text-slate-400">({keyword.count})</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </details>
           ) : null}
         </div>
 
