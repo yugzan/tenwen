@@ -1,6 +1,14 @@
 const { sendJson } = require('../../../_lib/http');
 const { sql, ensureTables } = require('../../../_lib/db');
 const { ensureAdmin } = require('../../../_lib/security');
+const crypto = require('crypto');
+
+function buildId() {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 module.exports = async (req, res) => {
   if (!ensureAdmin(req)) {
@@ -30,10 +38,76 @@ module.exports = async (req, res) => {
     }
 
     const report = reportResult.rows[0];
+    const currentQuestion = String(report.current_question || '').trim();
+    const currentAnswer = String(report.current_answer || '').trim();
+    const suggestedQuestion = String(report.suggested_question || '').trim();
+    const suggestedAnswer = String(report.suggested_answer || '').trim();
+
+    const nextQuestion = suggestedQuestion || currentQuestion;
+    const nextAnswer = suggestedAnswer || currentAnswer;
+
+    let applied = false;
+    let action = 'none';
+    let row = null;
+
+    if (nextQuestion && nextAnswer) {
+      if (report.item_id) {
+        const byId = await sql`
+          UPDATE qa_items
+          SET question = ${nextQuestion},
+              answer = ${nextAnswer},
+              updated_at = NOW()
+          WHERE id = ${report.item_id}
+          RETURNING id, question, answer, tag
+        `;
+        if (byId.rowCount > 0) {
+          applied = true;
+          action = 'update';
+          row = byId.rows[0];
+        }
+      }
+
+      if (!applied && currentQuestion && currentAnswer) {
+        const byMatch = await sql`
+          UPDATE qa_items
+          SET question = ${nextQuestion},
+              answer = ${nextAnswer},
+              updated_at = NOW()
+          WHERE id IN (
+            SELECT id
+            FROM qa_items
+            WHERE question = ${currentQuestion}
+              AND answer = ${currentAnswer}
+            ORDER BY created_at ASC
+            LIMIT 1
+          )
+          RETURNING id, question, answer, tag
+        `;
+        if (byMatch.rowCount > 0) {
+          applied = true;
+          action = 'update';
+          row = byMatch.rows[0];
+        }
+      }
+
+      if (!applied && suggestedQuestion && suggestedAnswer) {
+        const newId = buildId();
+        const inserted = await sql`
+          INSERT INTO qa_items (id, question, answer, tag, created_at, updated_at)
+          VALUES (${newId}, ${nextQuestion}, ${nextAnswer}, '', NOW(), NOW())
+          RETURNING id, question, answer, tag
+        `;
+        if (inserted.rowCount > 0) {
+          applied = true;
+          action = 'create';
+          row = inserted.rows[0];
+        }
+      }
+    }
 
     await sql`
       UPDATE reports
-      SET status = 'accepted', updated_at = NOW()
+      SET status = ${applied ? 'merged' : 'accepted'}, updated_at = NOW()
       WHERE id = ${reportId}
     `;
 
@@ -42,12 +116,17 @@ module.exports = async (req, res) => {
       report: {
         id: report.id,
         itemId: report.item_id,
-        currentQuestion: report.current_question,
-        currentAnswer: report.current_answer,
-        suggestedQuestion: report.suggested_question,
-        suggestedAnswer: report.suggested_answer,
+        currentQuestion: currentQuestion,
+        currentAnswer: currentAnswer,
+        suggestedQuestion: suggestedQuestion,
+        suggestedAnswer: suggestedAnswer,
         note: report.note,
-        status: 'accepted'
+        status: applied ? 'merged' : 'accepted'
+      },
+      apply: {
+        applied,
+        action,
+        row
       }
     });
   } catch (error) {

@@ -13,7 +13,6 @@ import {
   parseCsvText
 } from "../lib/csv";
 
-const STORAGE_KEY = "qa-workbench-data-v1";
 const VIEW_MODE_KEY = "qa-view-mode-v1";
 const RIGHT_PANEL_WIDTH_KEY = "qa-right-panel-width-v1";
 const DEFAULT_RIGHT_PANEL_WIDTH = 360;
@@ -199,76 +198,6 @@ const buildLocalId = () => {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 };
 
-const applyAcceptedReportToRows = (
-  rows: QAItem[],
-  report: {
-    itemId?: string | null;
-    currentQuestion?: string | null;
-    currentAnswer?: string | null;
-    suggestedQuestion?: string | null;
-    suggestedAnswer?: string | null;
-  }
-): { nextRows: QAItem[]; applied: boolean } => {
-  const itemId = String(report.itemId ?? "").trim();
-  const currentQuestion = String(report.currentQuestion ?? "").trim();
-  const currentAnswer = String(report.currentAnswer ?? "").trim();
-  const nextQuestion = String(report.suggestedQuestion ?? "").trim() || currentQuestion;
-  const nextAnswer = String(report.suggestedAnswer ?? "").trim() || currentAnswer;
-
-  if (!nextQuestion || !nextAnswer) {
-    return { nextRows: rows, applied: false };
-  }
-
-  if (itemId) {
-    let updated = false;
-    const byId = rows.map((row) => {
-      if (row.id !== itemId) {
-        return row;
-      }
-      updated = true;
-      return {
-        ...row,
-        question: nextQuestion,
-        answer: nextAnswer
-      };
-    });
-
-    if (updated) {
-      return { nextRows: byId, applied: true };
-    }
-  }
-
-  const matchedIndex = rows.findIndex(
-    (row) => row.question.trim() === currentQuestion && row.answer.trim() === currentAnswer
-  );
-  if (matchedIndex >= 0) {
-    const nextRows = [...rows];
-    nextRows[matchedIndex] = {
-      ...nextRows[matchedIndex],
-      question: nextQuestion,
-      answer: nextAnswer
-    };
-    return { nextRows, applied: true };
-  }
-
-  if (!itemId && report.suggestedQuestion && report.suggestedAnswer) {
-    return {
-      nextRows: [
-        {
-          id: buildLocalId(),
-          question: nextQuestion,
-          answer: nextAnswer,
-          tag: ""
-        },
-        ...rows
-      ],
-      applied: true
-    };
-  }
-
-  return { nextRows: rows, applied: false };
-};
-
 const buildBigramStats = (rows: QAItem[]): { stats: BigramStat[]; tokenToIds: Map<string, Set<string>> } => {
   const tokenToIds = new Map<string, Set<string>>();
 
@@ -314,7 +243,6 @@ export function QAWorkbench() {
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [statusText, setStatusText] = useState("請先匯入 CSV 題庫。");
   const [statusTone, setStatusTone] = useState<StatusTone>("info");
-  const [storageReady, setStorageReady] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("query");
   const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_PANEL_WIDTH);
   const [isResizingPanel, setIsResizingPanel] = useState(false);
@@ -338,6 +266,48 @@ export function QAWorkbench() {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [adminReports, setAdminReports] = useState<ReportRecord[]>([]);
   const [adminReportsLoading, setAdminReportsLoading] = useState(false);
+
+  const fetchItemsFromServer = async (): Promise<QAItem[] | null> => {
+    try {
+      const response = await fetch("/api/items", { cache: "no-store" });
+      const result = (await response.json()) as { error?: string; rows?: QAItem[] };
+      if (!response.ok) {
+        return null;
+      }
+      return Array.isArray(result.rows) ? result.rows : [];
+    } catch {
+      return null;
+    }
+  };
+
+  const adminRequest = async (
+    path: string,
+    body: Record<string, unknown>
+  ): Promise<{ ok: boolean; data: Record<string, unknown> }> => {
+    if (!adminApiKey.trim()) {
+      return { ok: false, data: { error: "請先填入管理 API Key。" } };
+    }
+
+    try {
+      const response = await fetch(path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminApiKey.trim()
+        },
+        body: JSON.stringify(body)
+      });
+      const data = (await response.json()) as Record<string, unknown>;
+      return { ok: response.ok, data };
+    } catch {
+      return { ok: false, data: { error: "連線失敗，請稍後再試。" } };
+    }
+  };
+
+  const replaceAllRowsToServer = async (rows: QAItem[]): Promise<boolean> => {
+    const result = await adminRequest("/api/admin/items/replace", { rows });
+    return result.ok;
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -389,53 +359,20 @@ export function QAWorkbench() {
       }
     }
 
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      void loadSeedData().finally(() => setStorageReady(true));
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as Array<Partial<QAItem>>;
-      if (!Array.isArray(parsed)) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setStorageReady(true);
+    const loadInitialData = async () => {
+      const serverRows = await fetchItemsFromServer();
+      if (serverRows && serverRows.length > 0) {
+        setQaData(serverRows);
+        setStatusText(`已載入 ${serverRows.length} 筆資料。`);
+        setStatusTone("info");
         return;
       }
 
-      const normalized = parsed
-        .map((item) => ({
-          id: String(item.id ?? buildLocalId()),
-          question: String(item.question ?? "").trim(),
-          answer: String(item.answer ?? "").trim(),
-          tag: normalizeTag(String(item.tag ?? ""))
-        }))
-        .filter((item) => item.question || item.answer || item.tag);
+      await loadSeedData();
+    };
 
-      if (normalized.length > 0) {
-        setQaData(normalized);
-        setStatusText(`已載入 ${normalized.length} 筆資料。`);
-        setStatusTone("info");
-      } else {
-        void loadSeedData();
-      }
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-      setStatusText("偵測到舊資料格式錯誤，已清空本機資料，請重新匯入 CSV。");
-      setStatusTone("warning");
-      void loadSeedData();
-    } finally {
-      setStorageReady(true);
-    }
+    void loadInitialData();
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !storageReady) {
-      return;
-    }
-
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(qaData));
-  }, [qaData, storageReady]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -717,7 +654,7 @@ export function QAWorkbench() {
     });
   }, [advancedField, advancedKeyword, filteredQA]);
 
-  const applyImportData = (rows: QAItem[], skipped: number, mode: SaveMode) => {
+  const applyImportData = async (rows: QAItem[], skipped: number, mode: SaveMode) => {
     if (qaData.length > 0) {
       const shouldOverwrite = window.confirm("目前已有題庫資料，是否覆蓋為新的 CSV 內容？");
       if (!shouldOverwrite) {
@@ -725,7 +662,16 @@ export function QAWorkbench() {
       }
     }
 
-    setQaData(rows.map((row) => ({ ...row, tag: normalizeTag(row.tag) })));
+    const normalizedRows = rows.map((row) => ({ ...row, tag: normalizeTag(row.tag) }));
+    if (isAdminUnlocked) {
+      const ok = await replaceAllRowsToServer(normalizedRows);
+      if (!ok) {
+        setStatusText("匯入成功，但同步到資料庫失敗。");
+        setStatusTone("warning");
+      }
+    }
+
+    setQaData(normalizedRows);
     setEditingRowId(null);
     setDraftQuestion("");
     setDraftAnswer("");
@@ -776,7 +722,7 @@ export function QAWorkbench() {
       }
 
       const { rows, skipped } = normalizeRows(rawRows, autoMap);
-      applyImportData(rows, skipped, "auto");
+      await applyImportData(rows, skipped, "auto");
     } catch {
       setStatusText("CSV 解析失敗，請確認編碼與欄位格式。");
       setStatusTone("warning");
@@ -804,7 +750,7 @@ export function QAWorkbench() {
     }
 
     const { rows, skipped } = normalizeRows(importPreview.rawRows, columnMap);
-    applyImportData(rows, skipped, "manual");
+    void applyImportData(rows, skipped, "manual");
   };
 
   const startEditing = (row: QAItem) => {
@@ -821,7 +767,7 @@ export function QAWorkbench() {
     setDraftTag("");
   };
 
-  const saveQA = (id: string) => {
+  const saveQA = async (id: string) => {
     const nextQuestion = draftQuestion.trim();
     const nextAnswer = draftAnswer.trim();
     const nextTag = normalizeTag(draftTag);
@@ -832,30 +778,29 @@ export function QAWorkbench() {
       return;
     }
 
-    setQaData((prev) =>
-      prev.map((row) => {
-        if (row.id !== id) {
-          return row;
-        }
+    const result = await adminRequest("/api/admin/items/update", {
+      id,
+      question: nextQuestion,
+      answer: nextAnswer,
+      tag: nextTag
+    });
+    if (!result.ok) {
+      setStatusText(String(result.data.error || "更新題目失敗。"));
+      setStatusTone("warning");
+      return;
+    }
 
-        return {
-          ...row,
-          question: nextQuestion,
-          answer: nextAnswer,
-          tag: nextTag
-        };
-      })
-    );
+    setQaData((prev) => prev.map((row) => (row.id === id ? ({ ...row, question: nextQuestion, answer: nextAnswer, tag: nextTag }) : row)));
 
     setEditingRowId(null);
     setDraftQuestion("");
     setDraftAnswer("");
     setDraftTag("");
-    setStatusText("題目/答案/標記已更新，並同步儲存在瀏覽器。");
+    setStatusText("題目已更新。");
     setStatusTone("success");
   };
 
-  const addQA = () => {
+  const addQA = async () => {
     const question = newQuestion.trim();
     const answer = newAnswer.trim();
     const tag = normalizeTag(newTag);
@@ -873,25 +818,44 @@ export function QAWorkbench() {
       tag
     };
 
+    const result = await adminRequest("/api/admin/items/create", row);
+    if (!result.ok) {
+      setStatusText(String(result.data.error || "新增題目失敗。"));
+      setStatusTone("warning");
+      return;
+    }
+
     setQaData((prev) => [row, ...prev]);
     setNewQuestion("");
     setNewAnswer("");
     setNewTag("");
-    setStatusText("已新增題目。你可以立刻搜尋或下載最新 CSV。");
+    setStatusText("已新增題目。");
     setStatusTone("success");
   };
 
-  const removeTagFromRow = (id: string, targetTag: string) => {
-    setQaData((prev) =>
-      prev.map((row) =>
-        row.id === id
-          ? {
-              ...row,
-              tag: removeTag(row.tag, targetTag)
-            }
-          : row
-      )
-    );
+  const removeTagFromRow = async (id: string, targetTag: string) => {
+    if (!isAdminUnlocked) {
+      return;
+    }
+
+    const target = qaData.find((row) => row.id === id);
+    if (!target) {
+      return;
+    }
+    const nextTag = removeTag(target.tag, targetTag);
+    const result = await adminRequest("/api/admin/items/update", {
+      id,
+      question: target.question,
+      answer: target.answer,
+      tag: nextTag
+    });
+    if (!result.ok) {
+      setStatusText(String(result.data.error || "移除標記失敗。"));
+      setStatusTone("warning");
+      return;
+    }
+
+    setQaData((prev) => prev.map((row) => (row.id === id ? { ...row, tag: nextTag } : row)));
     setStatusText(`已從該題移除標記「${targetTag}」。`);
     setStatusTone("success");
   };
@@ -904,12 +868,11 @@ export function QAWorkbench() {
     return batchTagPreset.trim();
   };
 
-  const applyBatchTagToRows = (rows: QAItem[], tagValue: string): number => {
+  const applyBatchTagToRows = (rows: QAItem[], tagValue: string): { nextRows: QAItem[]; changed: number } => {
     const targetIds = new Set(rows.map((row) => row.id));
     let changed = 0;
 
-    setQaData((prev) =>
-      prev.map((row) => {
+    const nextRows = qaData.map((row) => {
         if (!targetIds.has(row.id)) {
           return row;
         }
@@ -924,13 +887,12 @@ export function QAWorkbench() {
           ...row,
           tag: nextTag
         };
-      })
-    );
+      });
 
-    return changed;
+    return { nextRows, changed };
   };
 
-  const applyQuickBatchTag = () => {
+  const applyQuickBatchTag = async () => {
     const targetTag = resolveBatchTag();
     if (!targetTag) {
       setStatusText("請先選擇現有標記或輸入自訂標記。");
@@ -944,18 +906,25 @@ export function QAWorkbench() {
       return;
     }
 
-    const changed = applyBatchTagToRows(displayRows, targetTag);
+    const { nextRows, changed } = applyBatchTagToRows(displayRows, targetTag);
     if (changed === 0) {
       setStatusText("目前搜尋結果已包含該標記，沒有需要更新的題目。");
       setStatusTone("info");
       return;
     }
 
+    const ok = await replaceAllRowsToServer(nextRows);
+    if (!ok) {
+      setStatusText("批次補標成功，但同步資料庫失敗。");
+      setStatusTone("warning");
+      return;
+    }
+    setQaData(nextRows);
     setStatusText(`已對目前搜尋結果批次追加標記「${targetTag}」，更新 ${changed} 筆。`);
     setStatusTone("success");
   };
 
-  const applyAdvancedBatchTag = () => {
+  const applyAdvancedBatchTag = async () => {
     const targetTag = resolveBatchTag();
     if (!targetTag) {
       setStatusText("請先選擇現有標記或輸入自訂標記。");
@@ -969,18 +938,25 @@ export function QAWorkbench() {
       return;
     }
 
-    const changed = applyBatchTagToRows(advancedMatchedRows, targetTag);
+    const { nextRows, changed } = applyBatchTagToRows(advancedMatchedRows, targetTag);
     if (changed === 0) {
       setStatusText("命中資料已包含該標記，沒有需要更新的題目。");
       setStatusTone("info");
       return;
     }
 
+    const ok = await replaceAllRowsToServer(nextRows);
+    if (!ok) {
+      setStatusText("進階補標成功，但同步資料庫失敗。");
+      setStatusTone("warning");
+      return;
+    }
+    setQaData(nextRows);
     setStatusText(`已依進階規則追加標記「${targetTag}」，更新 ${changed} 筆。`);
     setStatusTone("success");
   };
 
-  const applySelectedBigramTag = () => {
+  const applySelectedBigramTag = async () => {
     if (!selectedBigram) {
       setStatusText("請先點選一個詩詞2字片段。");
       setStatusTone("warning");
@@ -995,13 +971,20 @@ export function QAWorkbench() {
     }
 
     const targetRows = qaData.filter((row) => ids.has(row.id));
-    const changed = applyBatchTagToRows(targetRows, selectedBigram);
+    const { nextRows, changed } = applyBatchTagToRows(targetRows, selectedBigram);
     if (changed === 0) {
       setStatusText(`片段「${selectedBigram}」命中的題目都已包含此標記。`);
       setStatusTone("info");
       return;
     }
 
+    const ok = await replaceAllRowsToServer(nextRows);
+    if (!ok) {
+      setStatusText("片段補標成功，但同步資料庫失敗。");
+      setStatusTone("warning");
+      return;
+    }
+    setQaData(nextRows);
     setStatusText(`已將「${selectedBigram}」標記追加到 ${changed} 筆詩詞題。`);
     setStatusTone("success");
   };
@@ -1137,6 +1120,10 @@ export function QAWorkbench() {
           suggestedQuestion?: string | null;
           suggestedAnswer?: string | null;
         };
+        apply?: {
+          applied?: boolean;
+          action?: string;
+        };
       };
       if (!response.ok) {
         setStatusText(result.error || "處理回報失敗。");
@@ -1144,16 +1131,14 @@ export function QAWorkbench() {
         return;
       }
 
-      if (action === "accept" && result.report) {
-        let applied = false;
-        setQaData((prev) => {
-          const outcome = applyAcceptedReportToRows(prev, result.report ?? {});
-          applied = outcome.applied;
-          return outcome.nextRows;
-        });
-
-        setStatusText(applied ? "回報已採納，並套用到題庫。" : "回報已採納。");
-        setStatusTone(applied ? "success" : "info");
+      if (action === "accept") {
+        const rows = await fetchItemsFromServer();
+        if (rows) {
+          setQaData(rows);
+        }
+        const apply = result.apply as { applied?: boolean } | undefined;
+        setStatusText(apply?.applied ? "回報已採納，並套用到題庫。" : "回報已採納。");
+        setStatusTone(apply?.applied ? "success" : "info");
       } else {
         setStatusText("回報已駁回。");
         setStatusTone("success");
@@ -1197,6 +1182,16 @@ export function QAWorkbench() {
         setStatusTone("warning");
         return;
       }
+
+      const currentRows = await fetchItemsFromServer();
+      if (currentRows && currentRows.length === 0 && qaData.length > 0) {
+        const synced = await replaceAllRowsToServer(qaData);
+        if (synced) {
+          setStatusText(`已初始化資料庫，共 ${qaData.length} 筆。`);
+          setStatusTone("success");
+        }
+      }
+
       setIsAdminUnlocked(true);
       setViewMode("edit");
       setStatusText("管理員驗證成功，已進入編輯模式。");
@@ -1207,9 +1202,16 @@ export function QAWorkbench() {
     }
   };
 
-  const deleteRow = (row: QAItem) => {
+  const deleteRow = async (row: QAItem) => {
     const ok = window.confirm("確定刪除此題？");
     if (!ok) {
+      return;
+    }
+
+    const result = await adminRequest("/api/admin/items/delete", { id: row.id });
+    if (!result.ok) {
+      setStatusText(String(result.data.error || "刪除失敗。"));
+      setStatusTone("warning");
       return;
     }
 
@@ -1219,39 +1221,17 @@ export function QAWorkbench() {
   };
 
   const resetLocalCacheAndReloadSeed = async () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
-      setQaData([]);
-      setEditingRowId(null);
-      setDraftQuestion("");
-      setDraftAnswer("");
-      setDraftTag("");
-      setSearchKeyword("");
-
-      const response = await fetch("/qa_seed.csv", { cache: "no-store" });
-      if (!response.ok) {
-        setStatusText("已清快取，但載入失敗。");
-        setStatusTone("warning");
+      const serverRows = await fetchItemsFromServer();
+      if (serverRows) {
+        setQaData(serverRows);
+        setStatusText(`已重新載入 ${serverRows.length} 筆資料。`);
+        setStatusTone("success");
         return;
       }
 
-      const text = await response.text();
-      const { rawRows, headers } = await parseCsvText(text);
-      const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
-      if (!map) {
-        setStatusText("已清快取，但欄位格式無法辨識。");
-        setStatusTone("warning");
-        return;
-      }
-
-      const { rows } = normalizeRows(rawRows, map);
-      setQaData(rows);
-      setStatusText(`已重新載入 ${rows.length} 筆資料。`);
-      setStatusTone("success");
+      setStatusText("重新載入失敗，請稍後再試。");
+      setStatusTone("warning");
     } catch {
       setStatusText("重新載入失敗，請稍後再試。");
       setStatusTone("warning");
