@@ -248,6 +248,7 @@ export function QAWorkbench() {
   const [isResizingPanel, setIsResizingPanel] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [showMobileBackToSearch, setShowMobileBackToSearch] = useState(false);
+  const [mobileQuickDrawerOpen, setMobileQuickDrawerOpen] = useState(false);
   const [batchTagPreset, setBatchTagPreset] = useState("");
   const [batchCustomTag, setBatchCustomTag] = useState("");
   const [advancedField, setAdvancedField] = useState<BatchField>("all");
@@ -1372,9 +1373,9 @@ export function QAWorkbench() {
             ) : null}
           </div>
 
-          {middleQuickGroups.length > 0 ? (
-            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2" defaultOpen={!isDesktop}>
-              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕（點我展開/收合）</summary>
+          {isDesktop && middleQuickGroups.length > 0 ? (
+            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2" defaultOpen>
+              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕</summary>
               <div className="mt-2 grid gap-2">
                 {middleQuickGroups.map((group) => (
                   <div key={`middle-${group.title}`} className="flex flex-wrap items-center gap-2">
@@ -1927,7 +1928,6 @@ export function QAWorkbench() {
 
       <aside className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur lg:hidden">
         <div className="flex w-full flex-col gap-2">
-          <p className="text-[11px] text-slate-400">快捷按鈕在上方「快捷按鈕（點我展開/收合）」</p>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <input
               value={searchKeyword}
@@ -1957,6 +1957,74 @@ export function QAWorkbench() {
         >
           回到查詢
         </button>
+      ) : null}
+
+      {!isDesktop ? (
+        <button
+          type="button"
+          onClick={() => setMobileQuickDrawerOpen(true)}
+          className="fixed right-3 top-24 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
+        >
+          快捷
+        </button>
+      ) : null}
+
+      {!isDesktop && mobileQuickDrawerOpen ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setMobileQuickDrawerOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
+            aria-label="關閉快捷抽屜遮罩"
+          />
+          <aside className="fixed right-0 top-0 z-50 h-screen w-[82vw] max-w-xs border-l border-slate-700/80 bg-surface-900 p-3 shadow-2xl lg:hidden">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-100">快捷面板</p>
+              <button
+                type="button"
+                onClick={() => setMobileQuickDrawerOpen(false)}
+                className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-300"
+              >
+                關閉
+              </button>
+            </div>
+            <div className="mt-3 grid max-h-[85vh] gap-3 overflow-y-auto pr-1">
+              {viewMode === "query" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileQuickDrawerOpen(false);
+                    openReportModal();
+                  }}
+                  className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200"
+                >
+                  題目不在結果？點這裡新增回報
+                </button>
+              ) : null}
+              {quickKeywordGroups.map((group) => (
+                <section key={`mobile-drawer-${group.title}`} className="grid gap-2">
+                  <p className="text-xs font-medium tracking-wide text-slate-400">{group.title}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {group.items.map((keyword) => (
+                      <button
+                        key={`mobile-drawer-${group.title}-${keyword.value}`}
+                        type="button"
+                        onClick={() => {
+                          setSearchKeyword(keyword.value);
+                          setMobileQuickDrawerOpen(false);
+                        }}
+                        className="h-9 rounded-lg border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200"
+                      >
+                        {keyword.value}
+                        <span className="ml-1 text-slate-400">({keyword.count})</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </aside>
+        </>
       ) : null}
 
       <aside
