@@ -199,6 +199,76 @@ const buildLocalId = () => {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 };
 
+const applyAcceptedReportToRows = (
+  rows: QAItem[],
+  report: {
+    itemId?: string | null;
+    currentQuestion?: string | null;
+    currentAnswer?: string | null;
+    suggestedQuestion?: string | null;
+    suggestedAnswer?: string | null;
+  }
+): { nextRows: QAItem[]; applied: boolean } => {
+  const itemId = String(report.itemId ?? "").trim();
+  const currentQuestion = String(report.currentQuestion ?? "").trim();
+  const currentAnswer = String(report.currentAnswer ?? "").trim();
+  const nextQuestion = String(report.suggestedQuestion ?? "").trim() || currentQuestion;
+  const nextAnswer = String(report.suggestedAnswer ?? "").trim() || currentAnswer;
+
+  if (!nextQuestion || !nextAnswer) {
+    return { nextRows: rows, applied: false };
+  }
+
+  if (itemId) {
+    let updated = false;
+    const byId = rows.map((row) => {
+      if (row.id !== itemId) {
+        return row;
+      }
+      updated = true;
+      return {
+        ...row,
+        question: nextQuestion,
+        answer: nextAnswer
+      };
+    });
+
+    if (updated) {
+      return { nextRows: byId, applied: true };
+    }
+  }
+
+  const matchedIndex = rows.findIndex(
+    (row) => row.question.trim() === currentQuestion && row.answer.trim() === currentAnswer
+  );
+  if (matchedIndex >= 0) {
+    const nextRows = [...rows];
+    nextRows[matchedIndex] = {
+      ...nextRows[matchedIndex],
+      question: nextQuestion,
+      answer: nextAnswer
+    };
+    return { nextRows, applied: true };
+  }
+
+  if (!itemId && report.suggestedQuestion && report.suggestedAnswer) {
+    return {
+      nextRows: [
+        {
+          id: buildLocalId(),
+          question: nextQuestion,
+          answer: nextAnswer,
+          tag: ""
+        },
+        ...rows
+      ],
+      applied: true
+    };
+  }
+
+  return { nextRows: rows, applied: false };
+};
+
 const buildBigramStats = (rows: QAItem[]): { stats: BigramStat[]; tokenToIds: Map<string, Set<string>> } => {
   const tokenToIds = new Map<string, Set<string>>();
 
@@ -1058,16 +1128,38 @@ export function QAWorkbench() {
           "x-admin-key": adminApiKey.trim()
         }
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as {
+        error?: string;
+        report?: {
+          itemId?: string | null;
+          currentQuestion?: string | null;
+          currentAnswer?: string | null;
+          suggestedQuestion?: string | null;
+          suggestedAnswer?: string | null;
+        };
+      };
       if (!response.ok) {
         setStatusText(result.error || "處理回報失敗。");
         setStatusTone("warning");
         return;
       }
 
+      if (action === "accept" && result.report) {
+        let applied = false;
+        setQaData((prev) => {
+          const outcome = applyAcceptedReportToRows(prev, result.report ?? {});
+          applied = outcome.applied;
+          return outcome.nextRows;
+        });
+
+        setStatusText(applied ? "回報已採納，並套用到題庫。" : "回報已採納。");
+        setStatusTone(applied ? "success" : "info");
+      } else {
+        setStatusText("回報已駁回。");
+        setStatusTone("success");
+      }
+
       setAdminReports((prev) => prev.filter((report) => report.id !== reportId));
-      setStatusText(action === "accept" ? "回報已採納。" : "回報已駁回。");
-      setStatusTone("success");
     } catch {
       setStatusText("處理回報失敗。");
       setStatusTone("warning");

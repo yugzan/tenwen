@@ -37,7 +37,19 @@ module.exports = async (req, res) => {
       WHERE id = ${reportId}
     `;
 
-    return sendJson(res, 200, { ok: true });
+    return sendJson(res, 200, {
+      ok: true,
+      report: {
+        id: report.id,
+        itemId: report.item_id,
+        currentQuestion: report.current_question,
+        currentAnswer: report.current_answer,
+        suggestedQuestion: report.suggested_question,
+        suggestedAnswer: report.suggested_answer,
+        note: report.note,
+        status: 'accepted'
+      }
+    });
   } catch (error) {
     return sendJson(res, 500, { error: '採納失敗', detail: String(error.message || error) });
   }
