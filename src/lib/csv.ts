@@ -106,6 +106,24 @@ export function parseCsv(file: File): Promise<{ rawRows: RawCsvRow[]; headers: s
   });
 }
 
+export function parseCsvText(text: string): Promise<{ rawRows: RawCsvRow[]; headers: string[] }> {
+  return new Promise((resolve, reject) => {
+    Papa.parse<RawCsvRow>(text, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        const rawRows = result.data.filter((row) =>
+          Object.values(row).some((cell) => String(cell ?? "").trim())
+        );
+        const headers = result.meta.fields ?? [];
+
+        resolve({ rawRows, headers });
+      },
+      error: (error) => reject(error)
+    });
+  });
+}
+
 export function detectColumnMap(headers: string[]): CsvColumnMap | null {
   if (!headers.length) {
     return null;

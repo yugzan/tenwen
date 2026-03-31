@@ -9,7 +9,8 @@ import {
   exportCsv,
   isColumnMapHighConfidence,
   normalizeRows,
-  parseCsv
+  parseCsv,
+  parseCsvText
 } from "../lib/csv";
 
 const STORAGE_KEY = "qa-workbench-data-v1";
@@ -271,6 +272,7 @@ export function QAWorkbench() {
   const [reportTurnstileToken, setReportTurnstileToken] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [adminApiKey, setAdminApiKey] = useState("");
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [adminReports, setAdminReports] = useState<ReportRecord[]>([]);
   const [adminReportsLoading, setAdminReportsLoading] = useState(false);
   const [deletedDraftIds, setDeletedDraftIds] = useState<Set<string>>(new Set());
@@ -283,8 +285,8 @@ export function QAWorkbench() {
     }
 
     const rawViewMode = window.localStorage.getItem(VIEW_MODE_KEY);
-    if (rawViewMode === "query" || rawViewMode === "edit") {
-      setViewMode(rawViewMode);
+    if (rawViewMode === "query") {
+      setViewMode("query");
     }
 
     const rawPanelWidth = window.localStorage.getItem(RIGHT_PANEL_WIDTH_KEY);
@@ -295,14 +297,42 @@ export function QAWorkbench() {
       }
     }
 
-    const rawAdminKey = window.localStorage.getItem("qa-admin-api-key");
-    if (rawAdminKey) {
-      setAdminApiKey(rawAdminKey);
-    }
-
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      setStorageReady(true);
+      const loadSeedData = async () => {
+        try {
+          const response = await fetch("/qa_seed.csv", { cache: "no-store" });
+          if (!response.ok) {
+            return;
+          }
+
+          const text = await response.text();
+          const { rawRows, headers } = await parseCsvText(text);
+          if (!headers.length || !rawRows.length) {
+            return;
+          }
+
+          const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
+          if (!map) {
+            return;
+          }
+
+          const { rows } = normalizeRows(rawRows, map);
+          if (!rows.length) {
+            return;
+          }
+
+          setQaData(rows);
+          setStatusText(`已自動載入公開題庫 ${rows.length} 筆資料。`);
+          setStatusTone("info");
+        } catch {
+          // ignore seed loading errors and keep app usable
+        } finally {
+          setStorageReady(true);
+        }
+      };
+
+      void loadSeedData();
       return;
     }
 
@@ -360,17 +390,6 @@ export function QAWorkbench() {
   }, [rightPanelWidth]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (!adminApiKey.trim()) {
-      window.localStorage.removeItem("qa-admin-api-key");
-      return;
-    }
-    window.localStorage.setItem("qa-admin-api-key", adminApiKey.trim());
-  }, [adminApiKey]);
-
-  useEffect(() => {
     if (!isResizingPanel || typeof window === "undefined") {
       return;
     }
@@ -416,6 +435,12 @@ export function QAWorkbench() {
       setDraftTag("");
     }
   }, [viewMode]);
+
+  useEffect(() => {
+    if (viewMode === "edit" && !isAdminUnlocked) {
+      setViewMode("query");
+    }
+  }, [isAdminUnlocked, viewMode]);
 
   useEffect(() => {
     if (!reportModalOpen || !TURNSTILE_SITE_KEY || typeof window === "undefined") {
@@ -1070,6 +1095,38 @@ export function QAWorkbench() {
     }
   };
 
+  const enterEditMode = async () => {
+    const key = adminApiKey.trim();
+    if (!key) {
+      setStatusText("請先輸入管理 API Key 才能進入編輯模式。");
+      setStatusTone("warning");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/drafts", {
+        headers: {
+          "x-admin-key": key
+        }
+      });
+      const result = (await response.json()) as { error?: string; drafts?: DraftRecord[] };
+      if (!response.ok) {
+        setStatusText(result.error || "管理 API Key 無效，無法進入編輯模式。");
+        setStatusTone("warning");
+        return;
+      }
+
+      setAdminDrafts(result.drafts ?? []);
+      setIsAdminUnlocked(true);
+      setViewMode("edit");
+      setStatusText("管理員驗證成功，已進入編輯模式。");
+      setStatusTone("success");
+    } catch {
+      setStatusText("驗證失敗，請稍後再試。");
+      setStatusTone("warning");
+    }
+  };
+
   const draftDeleteRow = async (row: QAItem) => {
     if (!adminApiKey.trim()) {
       setStatusText("請先填入管理 API Key。");
@@ -1139,7 +1196,9 @@ export function QAWorkbench() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode("edit")}
+                  onClick={() => {
+                    void enterEditMode();
+                  }}
                   className={`rounded-lg px-3 py-1.5 text-xs transition ${
                     viewMode === "edit" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
                   }`}
@@ -1147,6 +1206,16 @@ export function QAWorkbench() {
                   編輯模式
                 </button>
               </div>
+              {viewMode === "query" ? (
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={adminApiKey}
+                  onChange={(event) => setAdminApiKey(event.target.value)}
+                  placeholder="管理 API Key（進入編輯用）"
+                  className="h-10 w-52 rounded-xl border border-slate-600 bg-surface-800 px-3 text-xs text-slate-200 outline-none ring-accent-400 focus:ring-2"
+                />
+              ) : null}
               <button
                 onClick={() => {
                   exportCsv(qaData);
@@ -1220,7 +1289,7 @@ export function QAWorkbench() {
           ) : null}
         </div>
 
-        {viewMode === "edit" ? (
+        {viewMode === "edit" && isAdminUnlocked ? (
           <div className="rounded-2xl border border-slate-700 bg-surface-800 p-4">
           <h2 className="text-sm font-semibold text-slate-100">新增題目</h2>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -1271,7 +1340,7 @@ export function QAWorkbench() {
           </div>
         ) : null}
 
-        {viewMode === "edit" ? (
+        {viewMode === "edit" && isAdminUnlocked ? (
           <details className="rounded-2xl border border-slate-700 bg-surface-800 p-4" defaultOpen={qaData.length === 0}>
           <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100">
             檔案匯入與欄位設定（可收合）
@@ -1419,10 +1488,10 @@ export function QAWorkbench() {
               <table className="w-full table-fixed border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 bg-surface-700 text-slate-300">
-                    <th className={`${viewMode === "edit" ? "w-[40%]" : "w-[50%]"} px-4 py-3 font-medium`}>題目</th>
-                    <th className={`${viewMode === "edit" ? "w-[34%]" : "w-[38%]"} px-4 py-3 font-medium`}>答案</th>
+                    <th className={`${viewMode === "edit" && isAdminUnlocked ? "w-[40%]" : "w-[50%]"} px-4 py-3 font-medium`}>題目</th>
+                    <th className={`${viewMode === "edit" && isAdminUnlocked ? "w-[34%]" : "w-[38%]"} px-4 py-3 font-medium`}>答案</th>
                     <th className={`${viewMode === "edit" ? "w-[12%]" : "w-[12%]"} px-4 py-3 font-medium`}>標記</th>
-                    {viewMode === "edit" ? <th className="w-[14%] px-4 py-3 font-medium">操作</th> : null}
+                    {viewMode === "edit" && isAdminUnlocked ? <th className="w-[14%] px-4 py-3 font-medium">操作</th> : null}
                   </tr>
                 </thead>
 
@@ -1501,7 +1570,7 @@ export function QAWorkbench() {
                           ) : null}
                         </td>
 
-                        {viewMode === "edit" ? (
+                        {viewMode === "edit" && isAdminUnlocked ? (
                           <td className="px-4 py-3">
                             {isEditing ? (
                               <div className="flex gap-2">
@@ -1611,7 +1680,7 @@ export function QAWorkbench() {
                       </button>
                     ) : null}
 
-                    {viewMode === "edit" ? (
+                    {viewMode === "edit" && isAdminUnlocked ? (
                       <div className="mt-4 flex gap-2">
                         {isEditing ? (
                           <>
@@ -1796,7 +1865,7 @@ export function QAWorkbench() {
             </button>
           ) : null}
 
-          {viewMode === "edit" ? (
+          {viewMode === "edit" && isAdminUnlocked ? (
             <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
             <p className="text-xs font-medium tracking-wide text-slate-300">批次補標（目前搜尋結果）</p>
             <select
@@ -1860,6 +1929,8 @@ export function QAWorkbench() {
             <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
               <p className="text-xs font-medium tracking-wide text-slate-300">社群回報待審</p>
               <input
+                type="password"
+                autoComplete="off"
                 value={adminApiKey}
                 onChange={(event) => setAdminApiKey(event.target.value)}
                 placeholder="管理 API Key"
@@ -1904,7 +1975,7 @@ export function QAWorkbench() {
             </div>
           ) : null}
 
-          {viewMode === "edit" ? (
+          {viewMode === "edit" && isAdminUnlocked ? (
             <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium tracking-wide text-slate-300">草稿變更</p>
@@ -1953,7 +2024,7 @@ export function QAWorkbench() {
                 </button>
               ))}
             </div>
-            {viewMode === "edit" ? (
+            {viewMode === "edit" && isAdminUnlocked ? (
               <button
                 type="button"
                 onClick={applySelectedBigramTag}
