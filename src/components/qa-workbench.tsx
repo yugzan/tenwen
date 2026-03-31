@@ -236,6 +236,7 @@ const buildBigramStats = (rows: QAItem[]): { stats: BigramStat[]; tokenToIds: Ma
 export function QAWorkbench() {
   const { CSVReader } = useCSVReader();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const mobileSearchPanelRef = useRef<HTMLDivElement | null>(null);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetRef = useRef<unknown>(null);
 
@@ -257,6 +258,7 @@ export function QAWorkbench() {
   const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_PANEL_WIDTH);
   const [isResizingPanel, setIsResizingPanel] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [showMobileBackToSearch, setShowMobileBackToSearch] = useState(false);
   const [batchTagPreset, setBatchTagPreset] = useState("");
   const [batchCustomTag, setBatchCustomTag] = useState("");
   const [advancedField, setAdvancedField] = useState<BatchField>("all");
@@ -502,6 +504,25 @@ export function QAWorkbench() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [searchKeyword]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const onScroll = () => {
+      const isMobile = window.innerWidth < 1024;
+      setShowMobileBackToSearch(isMobile && window.scrollY > 280);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   const fuse = useMemo(
     () =>
@@ -1288,7 +1309,7 @@ export function QAWorkbench() {
           </button>
         </div>
 
-        <div className="sticky top-2 z-20 rounded-2xl border border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur">
+        <div ref={mobileSearchPanelRef} className="sticky top-2 z-20 rounded-2xl border border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur">
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
             <input
               ref={searchInputRef}
@@ -1665,14 +1686,13 @@ export function QAWorkbench() {
               </table>
             </div>
 
-            <div className="grid gap-3 md:hidden">
+            <div className="grid gap-2 md:hidden">
               {displayRows.map((row) => {
                 const isEditing = editingRowId === row.id;
                 const tags = parseTags(row.tag);
 
                 return (
-                  <article key={`card-${row.id}`} className="rounded-2xl border border-slate-700 bg-surface-800 p-4">
-                    <p className="text-xs uppercase tracking-wider text-slate-400">題目</p>
+                  <article key={`card-${row.id}`} className="rounded-xl border border-slate-700 bg-surface-800 p-3">
                     {isEditing ? (
                       <textarea
                         value={draftQuestion}
@@ -1680,10 +1700,9 @@ export function QAWorkbench() {
                         className="mt-1 min-h-20 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
                       />
                     ) : (
-                      <p className="mt-1 text-sm text-slate-100">{row.question || <span className="text-slate-500">(空白)</span>}</p>
+                      <p className="text-base leading-6 text-slate-100">{row.question || <span className="text-slate-500">(空白)</span>}</p>
                     )}
 
-                    <p className="mt-3 text-xs uppercase tracking-wider text-slate-400">答案</p>
                     {isEditing ? (
                       <textarea
                         value={draftAnswer}
@@ -1691,10 +1710,9 @@ export function QAWorkbench() {
                         className="mt-1 min-h-24 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
                       />
                     ) : (
-                      <p className="mt-1 text-sm text-slate-100">{row.answer || <span className="text-slate-500">(空白)</span>}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">{row.answer || <span className="text-slate-500">(空白)</span>}</p>
                     )}
 
-                    <p className="mt-3 text-xs uppercase tracking-wider text-slate-400">標記</p>
                     {isEditing ? (
                       <input
                         value={draftTag}
@@ -1703,7 +1721,7 @@ export function QAWorkbench() {
                         className="mt-1 h-10 w-full rounded-xl border border-slate-600 bg-surface-700 px-3 text-sm text-slate-100 outline-none ring-accent-400 focus:ring-2"
                       />
                     ) : tags.length > 0 ? (
-                      <div className="mt-1 flex flex-wrap gap-1">
+                      <div className="mt-2 flex flex-wrap gap-1">
                         {tags.map((tag) => (
                           <span
                             key={`${row.id}-m-${tag}`}
@@ -1721,7 +1739,7 @@ export function QAWorkbench() {
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-1 text-sm text-slate-100"><span className="text-slate-500">(未標記)</span></p>
+                      <p className="mt-2 text-xs text-slate-500">(未標記)</p>
                     )}
                     {viewMode === "query" ? (
                       <button
@@ -1880,18 +1898,31 @@ export function QAWorkbench() {
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
               placeholder="查詢關鍵字"
-              className="h-11 rounded-xl border border-slate-600 bg-surface-800 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="h-12 rounded-xl border border-slate-600 bg-surface-800 px-3 text-base text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
             />
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="h-11 rounded-xl border border-slate-500 bg-surface-700 px-3 text-xs text-slate-300 transition hover:border-slate-300 hover:text-white active:scale-95"
+              className="h-12 rounded-xl border border-slate-500 bg-surface-700 px-3 text-sm text-slate-300 transition hover:border-slate-300 hover:text-white active:scale-95"
             >
               清除
             </button>
           </div>
         </div>
       </aside>
+      {showMobileBackToSearch ? (
+        <button
+          type="button"
+          onClick={() => {
+            mobileSearchPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            searchInputRef.current?.focus();
+            searchInputRef.current?.select();
+          }}
+          className="fixed bottom-20 right-3 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
+        >
+          回到查詢
+        </button>
+      ) : null}
 
       <aside
         className="fixed right-0 top-0 hidden h-screen border-l border-slate-700/80 bg-surface-900/95 p-4 backdrop-blur lg:block"
