@@ -267,6 +267,29 @@ export function QAWorkbench() {
   const [adminReports, setAdminReports] = useState<ReportRecord[]>([]);
   const [adminReportsLoading, setAdminReportsLoading] = useState(false);
 
+  const ensureAdminKey = async (): Promise<string | null> => {
+    const current = adminApiKey.trim();
+    if (current) {
+      return current;
+    }
+
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const promptValue = window.prompt("請輸入管理 API Key");
+    if (!promptValue) {
+      return null;
+    }
+
+    const key = promptValue.trim();
+    if (!key) {
+      return null;
+    }
+    setAdminApiKey(key);
+    return key;
+  };
+
   const fetchItemsFromServer = async (): Promise<QAItem[] | null> => {
     try {
       const response = await fetch("/api/items", { cache: "no-store" });
@@ -284,7 +307,8 @@ export function QAWorkbench() {
     path: string,
     body: Record<string, unknown>
   ): Promise<{ ok: boolean; data: Record<string, unknown> }> => {
-    if (!adminApiKey.trim()) {
+    const key = await ensureAdminKey();
+    if (!key) {
       return { ok: false, data: { error: "請先填入管理 API Key。" } };
     }
 
@@ -293,7 +317,7 @@ export function QAWorkbench() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-key": adminApiKey.trim()
+          "x-admin-key": key
         },
         body: JSON.stringify(body)
       });
@@ -790,7 +814,12 @@ export function QAWorkbench() {
       return;
     }
 
-    setQaData((prev) => prev.map((row) => (row.id === id ? ({ ...row, question: nextQuestion, answer: nextAnswer, tag: nextTag }) : row)));
+    const refreshed = await fetchItemsFromServer();
+    if (refreshed) {
+      setQaData(refreshed);
+    } else {
+      setQaData((prev) => prev.map((row) => (row.id === id ? ({ ...row, question: nextQuestion, answer: nextAnswer, tag: nextTag }) : row)));
+    }
 
     setEditingRowId(null);
     setDraftQuestion("");
@@ -825,7 +854,12 @@ export function QAWorkbench() {
       return;
     }
 
-    setQaData((prev) => [row, ...prev]);
+    const refreshed = await fetchItemsFromServer();
+    if (refreshed) {
+      setQaData(refreshed);
+    } else {
+      setQaData((prev) => [row, ...prev]);
+    }
     setNewQuestion("");
     setNewAnswer("");
     setNewTag("");
@@ -855,7 +889,12 @@ export function QAWorkbench() {
       return;
     }
 
-    setQaData((prev) => prev.map((row) => (row.id === id ? { ...row, tag: nextTag } : row)));
+    const refreshed = await fetchItemsFromServer();
+    if (refreshed) {
+      setQaData(refreshed);
+    } else {
+      setQaData((prev) => prev.map((row) => (row.id === id ? { ...row, tag: nextTag } : row)));
+    }
     setStatusText(`已從該題移除標記「${targetTag}」。`);
     setStatusTone("success");
   };
@@ -1067,9 +1106,10 @@ export function QAWorkbench() {
   };
 
   const loadAdminReports = async () => {
-    if (!adminApiKey.trim()) {
-      setStatusText("請先填入管理 API Key。");
-      setStatusTone("warning");
+    const key = await ensureAdminKey();
+    if (!key) {
+      setStatusText("未輸入 API Key。");
+      setStatusTone("info");
       return;
     }
 
@@ -1077,7 +1117,7 @@ export function QAWorkbench() {
     try {
       const response = await fetch("/api/admin/reports?status=pending", {
         headers: {
-          "x-admin-key": adminApiKey.trim()
+          "x-admin-key": key
         }
       });
       const result = (await response.json()) as { error?: string; reports?: ReportRecord[] };
@@ -1098,9 +1138,10 @@ export function QAWorkbench() {
   };
 
   const resolveReportAction = async (reportId: number, action: "accept" | "reject") => {
-    if (!adminApiKey.trim()) {
-      setStatusText("請先填入管理 API Key。");
-      setStatusTone("warning");
+    const key = await ensureAdminKey();
+    if (!key) {
+      setStatusText("未輸入 API Key，無法處理回報。");
+      setStatusTone("info");
       return;
     }
 
@@ -1108,7 +1149,7 @@ export function QAWorkbench() {
       const response = await fetch(`/api/admin/reports/${reportId}/${action}`, {
         method: "POST",
         headers: {
-          "x-admin-key": adminApiKey.trim()
+          "x-admin-key": key
         }
       });
       const result = (await response.json()) as {
@@ -1152,21 +1193,10 @@ export function QAWorkbench() {
   };
 
   const enterEditMode = async () => {
-    let key = adminApiKey.trim();
-    if (!key && typeof window !== "undefined") {
-      const promptValue = window.prompt("請輸入管理 API Key");
-      if (!promptValue) {
-        setStatusText("未輸入 API Key，維持查詢模式。");
-        setStatusTone("info");
-        return;
-      }
-      key = promptValue.trim();
-      setAdminApiKey(key);
-    }
-
+    const key = await ensureAdminKey();
     if (!key) {
-      setStatusText("請先輸入管理 API Key 才能進入編輯模式。");
-      setStatusTone("warning");
+      setStatusText("未輸入 API Key，維持查詢模式。");
+      setStatusTone("info");
       return;
     }
 
@@ -1215,7 +1245,12 @@ export function QAWorkbench() {
       return;
     }
 
-    setQaData((prev) => prev.filter((item) => item.id !== row.id));
+    const refreshed = await fetchItemsFromServer();
+    if (refreshed) {
+      setQaData(refreshed);
+    } else {
+      setQaData((prev) => prev.filter((item) => item.id !== row.id));
+    }
     setStatusText("已刪除題目。");
     setStatusTone("success");
   };
