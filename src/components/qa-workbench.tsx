@@ -19,6 +19,8 @@ const DEFAULT_RIGHT_PANEL_WIDTH = 360;
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 520;
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
+const ADSENSE_CLIENT = import.meta.env.VITE_ADSENSE_CLIENT ?? "";
+const ADSENSE_SLOT = import.meta.env.VITE_ADSENSE_SLOT ?? "";
 
 type StatusTone = "success" | "warning" | "info";
 
@@ -84,7 +86,56 @@ declare global {
       render: (container: string | HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => unknown;
       reset: (widget?: unknown) => void;
     };
+    adsbygoogle?: unknown[];
   }
+}
+
+function DrawerAdSlot() {
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    if (!ADSENSE_CLIENT || !ADSENSE_SLOT || typeof window === "undefined") {
+      return;
+    }
+
+    const scriptId = "adsense-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+      script.crossOrigin = "anonymous";
+      document.head.appendChild(script);
+    }
+
+    if (!mountedRef.current) {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        mountedRef.current = true;
+      } catch {
+        // ignore ads push errors
+      }
+    }
+  }, []);
+
+  if (!ADSENSE_CLIENT || !ADSENSE_SLOT) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-700 bg-surface-800 p-2">
+      <p className="mb-1 text-[10px] text-slate-500">贊助內容</p>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block" }}
+        data-ad-client={ADSENSE_CLIENT}
+        data-ad-slot={ADSENSE_SLOT}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
 }
 
 const statusToneStyles: Record<StatusTone, string> = {
@@ -2080,6 +2131,7 @@ export function QAWorkbench() {
                   </div>
                 </section>
               ))}
+              <DrawerAdSlot />
             </div>
           </aside>
         </>
@@ -2275,6 +2327,7 @@ export function QAWorkbench() {
               </section>
             ))}
           </div>
+          <DrawerAdSlot />
         </div>
       </aside>
     </main>
