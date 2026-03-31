@@ -1963,7 +1963,7 @@ export function QAWorkbench() {
         <button
           type="button"
           onClick={() => setMobileQuickDrawerOpen(true)}
-          className="fixed right-3 top-24 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
+          className="fixed bottom-20 left-3 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
         >
           快捷
         </button>
