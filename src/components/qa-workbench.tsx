@@ -284,6 +284,38 @@ export function QAWorkbench() {
       return;
     }
 
+    const loadSeedData = async () => {
+      try {
+        const response = await fetch("/qa_seed.csv", { cache: "no-store" });
+        if (!response.ok) {
+          return false;
+        }
+
+        const text = await response.text();
+        const { rawRows, headers } = await parseCsvText(text);
+        if (!headers.length || !rawRows.length) {
+          return false;
+        }
+
+        const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
+        if (!map) {
+          return false;
+        }
+
+        const { rows } = normalizeRows(rawRows, map);
+        if (!rows.length) {
+          return false;
+        }
+
+        setQaData(rows);
+        setStatusText(`已自動載入公開題庫 ${rows.length} 筆資料。`);
+        setStatusTone("info");
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     const rawViewMode = window.localStorage.getItem(VIEW_MODE_KEY);
     if (rawViewMode === "query") {
       setViewMode("query");
@@ -299,40 +331,7 @@ export function QAWorkbench() {
 
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const loadSeedData = async () => {
-        try {
-          const response = await fetch("/qa_seed.csv", { cache: "no-store" });
-          if (!response.ok) {
-            return;
-          }
-
-          const text = await response.text();
-          const { rawRows, headers } = await parseCsvText(text);
-          if (!headers.length || !rawRows.length) {
-            return;
-          }
-
-          const map = detectColumnMap(headers) ?? defaultColumnMap(headers);
-          if (!map) {
-            return;
-          }
-
-          const { rows } = normalizeRows(rawRows, map);
-          if (!rows.length) {
-            return;
-          }
-
-          setQaData(rows);
-          setStatusText(`已自動載入公開題庫 ${rows.length} 筆資料。`);
-          setStatusTone("info");
-        } catch {
-          // ignore seed loading errors and keep app usable
-        } finally {
-          setStorageReady(true);
-        }
-      };
-
-      void loadSeedData();
+      void loadSeedData().finally(() => setStorageReady(true));
       return;
     }
 
@@ -353,15 +352,18 @@ export function QAWorkbench() {
         }))
         .filter((item) => item.question || item.answer || item.tag);
 
-      setQaData(normalized);
       if (normalized.length > 0) {
+        setQaData(normalized);
         setStatusText(`已從瀏覽器載入 ${normalized.length} 筆題庫資料。`);
+        setStatusTone("info");
+      } else {
+        void loadSeedData();
       }
-      setStatusTone("info");
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
       setStatusText("偵測到舊資料格式錯誤，已清空本機資料，請重新匯入 CSV。");
       setStatusTone("warning");
+      void loadSeedData();
     } finally {
       setStorageReady(true);
     }
