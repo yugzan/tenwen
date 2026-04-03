@@ -3,21 +3,47 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  @apply bg-surface-900 text-slate-100 antialiased;
+  @apply bg-paper-100 text-ink-900 antialiased font-sans;
   min-height: 100vh;
+  position: relative;
   background-image:
-    radial-gradient(circle at 20% 15%, rgba(19, 168, 224, 0.18), transparent 38%),
-    radial-gradient(circle at 85% 0%, rgba(29, 78, 216, 0.15), transparent 40%),
-    linear-gradient(180deg, rgba(9, 12, 17, 0.95) 0%, #090c11 100%);
+    radial-gradient(circle at 12% 18%, rgba(34, 29, 23, 0.08), transparent 35%),
+    radial-gradient(circle at 86% 6%, rgba(34, 29, 23, 0.06), transparent 30%),
+    radial-gradient(circle at 56% 65%, rgba(109, 98, 79, 0.1), transparent 45%),
+    linear-gradient(165deg, #fffdf8 0%, #f6f1e6 56%, #eee5d3 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(24, 21, 17, 0.12) 0, rgba(24, 21, 17, 0) 38%),
+    radial-gradient(circle at 82% 14%, rgba(24, 21, 17, 0.1) 0, rgba(24, 21, 17, 0) 34%),
+    radial-gradient(circle at 75% 72%, rgba(24, 21, 17, 0.09) 0, rgba(24, 21, 17, 0) 40%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.08;
+  background-image: radial-gradient(rgba(22, 18, 14, 0.95) 0.45px, transparent 0.45px);
+  background-size: 3px 3px;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+  scrollbar-color: #a99b87 #efe9dd;
 }
 
 *::-webkit-scrollbar {
@@ -26,10 +52,38 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #a99b87;
   border-radius: 9999px;
 }
 
 *::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #efe9dd;
+}
+
+@media (max-width: 430px) {
+  .qa-mobile-card-question {
+    font-size: 20px;
+    line-height: 1.7;
+  }
+
+  .qa-mobile-card-answer {
+    font-size: 18px;
+    line-height: 1.7;
+  }
+
+  .qa-mobile-input {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .qa-mobile-action {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .qa-mobile-tag {
+    font-size: 0.9rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
 }

@@ -124,8 +124,8 @@ function DrawerAdSlot() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-surface-800 p-2">
-      <p className="mb-1 text-[10px] text-slate-500">贊助內容</p>
+    <div className="rounded-xl border border-mist-300 bg-paper-200 p-2">
+      <p className="mb-1 text-[10px] text-mist-500">贊助內容</p>
       <ins
         className="adsbygoogle"
         style={{ display: "block" }}
@@ -139,9 +139,9 @@ function DrawerAdSlot() {
 }
 
 const statusToneStyles: Record<StatusTone, string> = {
-  success: "border-emerald-300/30 bg-emerald-400/10 text-emerald-200",
-  warning: "border-amber-300/30 bg-amber-400/10 text-amber-100",
-  info: "border-sky-300/30 bg-sky-400/10 text-sky-100"
+  success: "border-emerald-500/30 bg-emerald-200/60 text-emerald-900",
+  warning: "border-amber-500/35 bg-amber-200/60 text-amber-900",
+  info: "border-stone-500/35 bg-stone-200/70 text-stone-900"
 };
 
 const buttonBase =
@@ -1393,12 +1393,12 @@ export function QAWorkbench() {
         paddingRight: isDesktop ? rightPanelWidth + 24 : undefined
       }}
     >
-      <section className="-mx-4 border-b border-slate-700/60 bg-surface-900/95 px-4 pb-4 pt-4 sm:-mx-6 sm:px-6">
+      <section className="-mx-4 border-b border-mist-300/80 bg-paper-100/95 px-4 pb-4 pt-4 sm:-mx-6 sm:px-6">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid gap-1">
-              <h1 className="text-lg font-semibold tracking-wide text-slate-100 sm:text-xl">題庫搜尋與修改工作台</h1>
-              <p className="text-xs text-slate-400">Powered by 旅行散仙</p>
+              <h1 className="font-title text-lg font-semibold tracking-wide text-ink-900 sm:text-xl">天問大會，你問了嗎</h1>
+              <p className="text-xs text-mist-600">Powered by 旅行散仙</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1408,7 +1408,7 @@ export function QAWorkbench() {
                   setStatusTone("success");
                 }}
                 disabled={qaData.length === 0}
-                className={`${buttonBase} bg-accent-500 text-slate-950 hover:bg-accent-400`}
+                className={`${buttonBase} bg-gold-500 text-ink-900 hover:bg-gold-400`}
               >
                 下載CSV
               </button>
@@ -1425,39 +1425,39 @@ export function QAWorkbench() {
             onClick={() => {
               void resetLocalCacheAndReloadSeed();
             }}
-            className="h-9 rounded-xl border border-slate-500 bg-surface-700 px-3 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
+            className="h-9 rounded-xl border border-mist-500 bg-paper-300 px-3 text-xs text-ink-800 transition hover:border-gold-500 hover:text-ink-900 active:scale-95"
           >
             重新載入
           </button>
         </div>
 
-        <div ref={mobileSearchPanelRef} className="sticky top-2 z-20 rounded-2xl border border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur">
+        <div ref={mobileSearchPanelRef} className="sticky top-2 z-20 rounded-2xl border border-mist-300/90 bg-paper-100/95 p-3 backdrop-blur">
           <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
             <input
               ref={searchInputRef}
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
               placeholder="快速查詢（可直接輸入或點下方快捷詞）"
-              className="h-11 rounded-xl border border-slate-600 bg-surface-800 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="h-11 rounded-xl border border-mist-400 bg-paper-200 px-3 text-sm text-ink-900 outline-none ring-gold-500 transition placeholder:text-mist-600 focus:ring-2"
             />
-            <div className="flex h-11 items-center rounded-xl border border-slate-700 bg-surface-800 px-3 text-sm text-slate-300">
-              共 <span className="mx-1 font-semibold text-slate-100">{displayRows.length}</span> / {qaData.length} 筆
+            <div className="flex h-11 items-center rounded-xl border border-mist-300 bg-paper-200 px-3 text-sm text-ink-700">
+              共 <span className="mx-1 font-semibold text-ink-900">{displayRows.length}</span> / {qaData.length} 筆
             </div>
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="h-11 rounded-xl border border-slate-500 bg-surface-700 px-3 text-xs text-slate-300 transition hover:border-slate-300 hover:text-white active:scale-95"
+              className="h-11 rounded-xl border border-mist-500 bg-paper-300 px-3 text-xs text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
             >
               清除
             </button>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-lg border border-slate-600 bg-surface-800 p-1">
+            <div className="inline-flex rounded-lg border border-mist-400 bg-paper-200 p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("query")}
                 className={`rounded-md px-2 py-1 text-[11px] transition ${
-                  viewMode === "query" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
+                  viewMode === "query" ? "bg-gold-500 text-ink-900" : "text-ink-700 hover:text-ink-900"
                 }`}
               >
                 查詢
@@ -1468,7 +1468,7 @@ export function QAWorkbench() {
                   void enterEditMode();
                 }}
                 className={`rounded-md px-2 py-1 text-[11px] transition ${
-                  viewMode === "edit" ? "bg-accent-500 text-slate-950" : "text-slate-300 hover:text-white"
+                  viewMode === "edit" ? "bg-gold-500 text-ink-900" : "text-ink-700 hover:text-ink-900"
                 }`}
               >
                 編輯
@@ -1478,7 +1478,7 @@ export function QAWorkbench() {
               <button
                 type="button"
                 onClick={() => openReportModal()}
-                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-[11px] text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
+                className="rounded-lg border border-amber-500/40 bg-amber-200/35 px-2.5 py-1 text-[11px] text-amber-900 transition hover:border-amber-500 hover:text-amber-800 active:scale-95"
               >
                 新增回報
               </button>
@@ -1486,21 +1486,21 @@ export function QAWorkbench() {
           </div>
 
           {isDesktop && middleQuickGroups.length > 0 ? (
-            <details className="mt-2 rounded-xl border border-slate-700 bg-surface-800/80 p-2" defaultOpen>
-              <summary className="cursor-pointer list-none text-xs font-medium text-slate-300">快捷按鈕</summary>
+            <details className="mt-2 rounded-xl border border-mist-300 bg-paper-200/80 p-2" defaultOpen>
+              <summary className="cursor-pointer list-none text-xs font-medium text-ink-700">快捷按鈕</summary>
               <div className="mt-2 grid gap-2">
                 {middleQuickGroups.map((group) => (
                   <div key={`middle-${group.title}`} className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-medium text-slate-400">{group.title}</span>
+                    <span className="text-xs font-medium text-mist-600">{group.title}</span>
                     {group.items.map((keyword) => (
                       <button
                         key={`middle-${group.title}-${keyword.value}`}
                         type="button"
                         onClick={() => setSearchKeyword(keyword.value)}
-                        className="h-8 rounded-lg border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
+                        className="h-8 rounded-lg border border-mist-400 bg-paper-200 px-2 text-xs text-ink-800 transition hover:border-gold-500 hover:text-ink-900 active:scale-95"
                       >
                         {keyword.value}
-                        <span className="ml-1 text-slate-400">({keyword.count})</span>
+                        <span className="ml-1 text-mist-600">({keyword.count})</span>
                       </button>
                     ))}
                   </div>
@@ -1511,8 +1511,8 @@ export function QAWorkbench() {
         </div>
 
         {viewMode === "edit" && isAdminUnlocked ? (
-          <div className="rounded-2xl border border-slate-700 bg-surface-800 p-4">
-          <h2 className="text-sm font-semibold text-slate-100">新增題目</h2>
+          <div className="rounded-2xl border border-mist-300 bg-paper-200 p-4">
+          <h2 className="text-sm font-semibold text-ink-900">新增題目</h2>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             <input
               value={newQuestion}
@@ -1524,7 +1524,7 @@ export function QAWorkbench() {
                 }
               }}
               placeholder="新增題目"
-              className="h-11 min-w-[240px] flex-1 rounded-xl border border-slate-600 bg-surface-700 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="h-11 min-w-[240px] flex-1 rounded-xl border border-mist-400 bg-paper-300 px-3 text-sm text-ink-900 outline-none ring-gold-500 transition placeholder:text-mist-600 focus:ring-2"
             />
             <input
               value={newAnswer}
@@ -1536,7 +1536,7 @@ export function QAWorkbench() {
                 }
               }}
               placeholder="新增答案"
-              className="h-11 min-w-[200px] flex-1 rounded-xl border border-slate-600 bg-surface-700 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="h-11 min-w-[200px] flex-1 rounded-xl border border-mist-400 bg-paper-300 px-3 text-sm text-ink-900 outline-none ring-gold-500 transition placeholder:text-mist-600 focus:ring-2"
             />
             <input
               value={newTag}
@@ -1548,12 +1548,12 @@ export function QAWorkbench() {
                 }
               }}
               placeholder="標記（例：七言|借問）"
-              className="h-11 min-w-[180px] rounded-xl border border-slate-600 bg-surface-700 px-3 text-sm text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="h-11 min-w-[180px] rounded-xl border border-mist-400 bg-paper-300 px-3 text-sm text-ink-900 outline-none ring-gold-500 transition placeholder:text-mist-600 focus:ring-2"
             />
             <button
               type="button"
               onClick={addQA}
-              className={`${buttonBase} h-11 shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95`}
+              className={`${buttonBase} h-11 shrink-0 bg-emerald-500 text-ink-900 hover:bg-emerald-400 active:scale-95`}
             >
               新增
             </button>
@@ -1562,8 +1562,8 @@ export function QAWorkbench() {
         ) : null}
 
         {viewMode === "edit" && isAdminUnlocked ? (
-          <details className="rounded-2xl border border-slate-700 bg-surface-800 p-4" defaultOpen={qaData.length === 0}>
-          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100">
+          <details className="rounded-2xl border border-mist-300 bg-paper-200 p-4" defaultOpen={qaData.length === 0}>
+          <summary className="cursor-pointer list-none text-sm font-semibold text-ink-900">
             檔案匯入與欄位設定（可收合）
           </summary>
           <div className="mt-3 grid gap-4">
@@ -1577,21 +1577,21 @@ export function QAWorkbench() {
               }}
             >
               {({ getRootProps, acceptedFile, getRemoveFileProps }: CsvReaderRenderProps) => (
-                <div className="rounded-2xl border border-dashed border-slate-500/70 bg-surface-800 p-4 shadow-glow">
+                <div className="rounded-2xl border border-dashed border-mist-500/70 bg-paper-200 p-4 shadow-glow">
                   <div
                     {...getRootProps()}
-                    className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-transparent px-4 py-5 text-center transition hover:border-accent-400/60 hover:bg-surface-700"
+                    className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-transparent px-4 py-5 text-center transition hover:border-gold-500/60 hover:bg-paper-300"
                   >
-                    <p className="text-sm font-medium text-slate-100">拖拉 CSV 到這裡，或點擊選擇檔案</p>
-                    <p className="mt-1 text-xs text-slate-400">支援 UTF-8 編碼，欄位可為 question/answer/tag 或自訂名稱</p>
-                    {acceptedFile ? <p className="mt-3 text-xs text-accent-400">已選擇：{String(acceptedFile.name ?? "CSV")}</p> : null}
+                    <p className="text-sm font-medium text-ink-900">拖拉 CSV 到這裡，或點擊選擇檔案</p>
+                    <p className="mt-1 text-xs text-mist-600">支援 UTF-8 編碼，欄位可為 question/answer/tag 或自訂名稱</p>
+                    {acceptedFile ? <p className="mt-3 text-xs text-gold-500">已選擇：{String(acceptedFile.name ?? "CSV")}</p> : null}
                   </div>
 
                   {acceptedFile ? (
                     <div className="mt-3 flex justify-end">
                       <button
                         {...getRemoveFileProps()}
-                        className={`${buttonBase} border border-slate-500 bg-surface-700 text-slate-200 hover:border-slate-300`}
+                        className={`${buttonBase} border border-mist-500 bg-paper-300 text-ink-800 hover:border-mist-600`}
                       >
                         清除檔案
                       </button>
@@ -1602,13 +1602,13 @@ export function QAWorkbench() {
             </CSVReader>
 
             {importPreview && columnMap ? (
-              <div className="rounded-2xl border border-slate-700 bg-surface-800 p-4">
-                <h2 className="text-sm font-semibold text-slate-100">欄位映射確認</h2>
-                <p className="mt-1 text-xs text-slate-400">若自動辨識不符合你的檔案格式，可在這裡修正後再匯入。</p>
+              <div className="rounded-2xl border border-mist-300 bg-paper-200 p-4">
+                <h2 className="text-sm font-semibold text-ink-900">欄位映射確認</h2>
+                <p className="mt-1 text-xs text-mist-600">若自動辨識不符合你的檔案格式，可在這裡修正後再匯入。</p>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <label className="grid gap-1 text-sm">
-                    <span className="text-slate-300">題目欄位</span>
+                    <span className="text-ink-700">題目欄位</span>
                     <select
                       value={columnMap.questionKey}
                       onChange={(event) =>
@@ -1621,7 +1621,7 @@ export function QAWorkbench() {
                             : prev
                         )
                       }
-                      className="h-11 rounded-xl border border-slate-600 bg-surface-700 px-3 text-slate-100"
+                      className="h-11 rounded-xl border border-mist-400 bg-paper-300 px-3 text-ink-900"
                     >
                       {importPreview.headers.map((header) => (
                         <option key={`question-${header}`} value={header}>
@@ -1632,7 +1632,7 @@ export function QAWorkbench() {
                   </label>
 
                   <label className="grid gap-1 text-sm">
-                    <span className="text-slate-300">答案欄位</span>
+                    <span className="text-ink-700">答案欄位</span>
                     <select
                       value={columnMap.answerKey}
                       onChange={(event) =>
@@ -1645,7 +1645,7 @@ export function QAWorkbench() {
                             : prev
                         )
                       }
-                      className="h-11 rounded-xl border border-slate-600 bg-surface-700 px-3 text-slate-100"
+                      className="h-11 rounded-xl border border-mist-400 bg-paper-300 px-3 text-ink-900"
                     >
                       {importPreview.headers.map((header) => (
                         <option key={`answer-${header}`} value={header}>
@@ -1656,7 +1656,7 @@ export function QAWorkbench() {
                   </label>
 
                   <label className="grid gap-1 text-sm">
-                    <span className="text-slate-300">標記欄位（可選）</span>
+                    <span className="text-ink-700">標記欄位（可選）</span>
                     <select
                       value={columnMap.tagKey ?? ""}
                       onChange={(event) =>
@@ -1669,7 +1669,7 @@ export function QAWorkbench() {
                             : prev
                         )
                       }
-                      className="h-11 rounded-xl border border-slate-600 bg-surface-700 px-3 text-slate-100"
+                      className="h-11 rounded-xl border border-mist-400 bg-paper-300 px-3 text-ink-900"
                     >
                       <option value="">（不使用標記欄位）</option>
                       {importPreview.headers.map((header) => (
@@ -1684,7 +1684,7 @@ export function QAWorkbench() {
                 <div className="mt-4 flex justify-end">
                   <button
                     onClick={handleConfirmColumnMap}
-                    className={`${buttonBase} bg-accent-500 text-slate-950 hover:bg-accent-400`}
+                    className={`${buttonBase} bg-gold-500 text-ink-900 hover:bg-gold-400`}
                   >
                     套用欄位並匯入
                   </button>
@@ -1698,17 +1698,17 @@ export function QAWorkbench() {
 
       <section className="mt-5">
         {displayRows.length === 0 ? (
-          <div className="rounded-2xl border border-slate-700 bg-surface-800 px-4 py-12 text-center text-slate-400">
+          <div className="rounded-2xl border border-mist-300 bg-paper-200 px-4 py-12 text-center text-mist-600">
             沒有符合條件的資料，試試不同關鍵字。
           </div>
         ) : null}
 
         {displayRows.length > 0 ? (
           <>
-            <div className="hidden overflow-hidden rounded-2xl border border-slate-700 bg-surface-800 md:block">
+            <div className="hidden overflow-hidden rounded-2xl border border-mist-300 bg-paper-200 md:block">
               <table className="w-full table-fixed border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700 bg-surface-700 text-slate-300">
+                  <tr className="border-b border-mist-300 bg-paper-300 text-ink-700">
                     <th className={`${viewMode === "edit" && isAdminUnlocked ? "w-[40%]" : "w-[50%]"} px-4 py-3 font-medium`}>題目</th>
                     <th className={`${viewMode === "edit" && isAdminUnlocked ? "w-[34%]" : "w-[38%]"} px-4 py-3 font-medium`}>答案</th>
                     <th className={`${viewMode === "edit" ? "w-[12%]" : "w-[12%]"} px-4 py-3 font-medium`}>標記</th>
@@ -1722,53 +1722,53 @@ export function QAWorkbench() {
                     const tags = parseTags(row.tag);
 
                     return (
-                      <tr key={row.id} className="border-b border-slate-700/70 align-top last:border-b-0">
-                        <td className="px-4 py-3 text-slate-100">
+                      <tr key={row.id} className="border-b border-mist-300/80 align-top last:border-b-0">
+                        <td className="px-4 py-3 text-ink-900">
                           {isEditing ? (
                             <textarea
                               value={draftQuestion}
                               onChange={(event) => setDraftQuestion(event.target.value)}
-                              className="min-h-20 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
+                              className="min-h-20 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2"
                             />
                           ) : row.question ? (
                             row.question
                           ) : (
-                            <span className="text-slate-500">(空白)</span>
+                            <span className="text-mist-500">(空白)</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-100">
+                        <td className="px-4 py-3 text-ink-900">
                           {isEditing ? (
                             <textarea
                               value={draftAnswer}
                               onChange={(event) => setDraftAnswer(event.target.value)}
-                              className="min-h-24 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
+                              className="min-h-24 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2"
                             />
                           ) : row.answer ? (
                             row.answer
                           ) : (
-                            <span className="text-slate-500">(空白)</span>
+                            <span className="text-mist-500">(空白)</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-100">
+                        <td className="px-4 py-3 text-ink-900">
                           {isEditing ? (
                             <input
                               value={draftTag}
                               onChange={(event) => setDraftTag(event.target.value)}
                               placeholder="例如：對聯|借問"
-                              className="h-10 w-full rounded-xl border border-slate-600 bg-surface-700 px-2 text-sm outline-none ring-accent-400 focus:ring-2"
+                              className="h-10 w-full rounded-xl border border-mist-400 bg-paper-300 px-2 text-sm outline-none ring-gold-500 focus:ring-2"
                             />
                           ) : tags.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {tags.map((tag) => (
                                 <span
                                   key={`${row.id}-${tag}`}
-                                  className="inline-flex items-center gap-1 rounded-full border border-slate-500 bg-surface-700 px-2 py-1 text-xs text-slate-200"
+                                  className="inline-flex items-center gap-1 rounded-full border border-mist-500 bg-paper-300 px-2 py-1 text-xs text-ink-800"
                                 >
                                   {tag}
                                   <button
                                     type="button"
                                     onClick={() => removeTagFromRow(row.id, tag)}
-                                    className="rounded px-1 text-slate-400 transition hover:bg-slate-600 hover:text-white"
+                                    className="rounded px-1 text-mist-600 transition hover:bg-mist-400 hover:text-ink-900"
                                   >
                                     x
                                   </button>
@@ -1776,14 +1776,14 @@ export function QAWorkbench() {
                               ))}
                             </div>
                           ) : (
-                            <span className="text-slate-500">(未標記)</span>
+                            <span className="text-mist-500">(未標記)</span>
                           )}
                           {viewMode === "query" ? (
                             <div className="mt-2">
                               <button
                                 type="button"
                                 onClick={() => openReportModal(row)}
-                                className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-2 py-1 text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100"
+                                className="rounded-lg border border-amber-500/40 bg-amber-200/35 px-2 py-1 text-xs text-amber-900 transition hover:border-amber-500 hover:text-amber-800"
                               >
                                 回報
                               </button>
@@ -1797,13 +1797,13 @@ export function QAWorkbench() {
                               <div className="flex gap-2">
                               <button
                                 onClick={() => saveQA(row.id)}
-                                className={`${buttonBase} bg-emerald-500 px-3 py-1.5 text-slate-950 hover:bg-emerald-400`}
+                                className={`${buttonBase} bg-emerald-500 px-3 py-1.5 text-ink-900 hover:bg-emerald-400`}
                                 >
                                   儲存
                                 </button>
                               <button
                                 onClick={cancelEditing}
-                                className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-200 hover:border-slate-300`}
+                                className={`${buttonBase} border border-mist-500 bg-paper-300 px-3 py-1.5 text-ink-800 hover:border-mist-600`}
                               >
                                 取消
                               </button>
@@ -1812,13 +1812,13 @@ export function QAWorkbench() {
                               <div className="flex flex-col gap-2">
                                 <button
                                   onClick={() => startEditing(row)}
-                                  className={`${buttonBase} border border-slate-500 bg-surface-700 px-3 py-1.5 text-slate-100 hover:border-accent-400 hover:text-white`}
+                                  className={`${buttonBase} border border-mist-500 bg-paper-300 px-3 py-1.5 text-ink-900 hover:border-gold-500 hover:text-ink-900`}
                                 >
                                   修改題目/答案
                                 </button>
                                 <button
                                   onClick={() => deleteRow(row)}
-                                  className={`${buttonBase} border border-rose-400/40 bg-rose-500/15 px-3 py-1.5 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
+                                  className={`${buttonBase} border border-rose-500/40 bg-rose-200/40 px-3 py-1.5 text-rose-900 hover:border-rose-500 hover:text-rose-800`}
                                 >
                                   刪除
                                 </button>
@@ -1839,25 +1839,25 @@ export function QAWorkbench() {
                 const tags = parseTags(row.tag);
 
                 return (
-                  <article key={`card-${row.id}`} className="rounded-xl border border-slate-700 bg-surface-800 p-3">
+                  <article key={`card-${row.id}`} className="rounded-xl border border-mist-300 bg-paper-200 p-3">
                     {isEditing ? (
                       <textarea
                         value={draftQuestion}
                         onChange={(event) => setDraftQuestion(event.target.value)}
-                        className="mt-1 min-h-20 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
+                        className="qa-mobile-input mt-1 min-h-20 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[18px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="text-base leading-6 text-slate-100">{row.question || <span className="text-slate-500">(空白)</span>}</p>
+                      <p className="qa-mobile-card-question text-base leading-6 text-ink-900">{row.question || <span className="text-mist-500">(空白)</span>}</p>
                     )}
 
                     {isEditing ? (
                       <textarea
                         value={draftAnswer}
                         onChange={(event) => setDraftAnswer(event.target.value)}
-                        className="mt-1 min-h-24 w-full rounded-xl border border-slate-600 bg-surface-700 p-2 text-sm outline-none ring-accent-400 focus:ring-2"
+                        className="qa-mobile-input mt-1 min-h-24 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[17px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="mt-1 text-sm leading-6 text-slate-300">{row.answer || <span className="text-slate-500">(空白)</span>}</p>
+                      <p className="qa-mobile-card-answer mt-1 text-sm leading-6 text-ink-700">{row.answer || <span className="text-mist-500">(空白)</span>}</p>
                     )}
 
                     {isEditing ? (
@@ -1865,20 +1865,20 @@ export function QAWorkbench() {
                         value={draftTag}
                         onChange={(event) => setDraftTag(event.target.value)}
                         placeholder="例如：對聯|借問"
-                        className="mt-1 h-10 w-full rounded-xl border border-slate-600 bg-surface-700 px-3 text-sm text-slate-100 outline-none ring-accent-400 focus:ring-2"
+                        className="qa-mobile-input mt-1 h-10 w-full rounded-xl border border-mist-400 bg-paper-300 px-3 text-sm text-ink-900 outline-none ring-gold-500 focus:ring-2"
                       />
                     ) : tags.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {tags.map((tag) => (
                           <span
                             key={`${row.id}-m-${tag}`}
-                            className="inline-flex items-center gap-1 rounded-full border border-slate-500 bg-surface-700 px-2 py-1 text-xs text-slate-200"
+                            className="qa-mobile-tag inline-flex items-center gap-1 rounded-full border border-mist-500 bg-paper-300 px-2 py-1 text-xs text-ink-800"
                           >
                             {tag}
                             <button
                               type="button"
                               onClick={() => removeTagFromRow(row.id, tag)}
-                              className="rounded px-1 text-slate-400 transition hover:bg-slate-600 hover:text-white"
+                              className="rounded px-1 text-mist-600 transition hover:bg-mist-400 hover:text-ink-900"
                             >
                               x
                             </button>
@@ -1886,13 +1886,13 @@ export function QAWorkbench() {
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-2 text-xs text-slate-500">(未標記)</p>
+                      <p className="mt-2 text-xs text-mist-500">(未標記)</p>
                     )}
                     {viewMode === "query" ? (
                       <button
                         type="button"
                         onClick={() => openReportModal(row)}
-                        className="mt-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-2 py-1 text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100"
+                        className="qa-mobile-action mt-2 rounded-lg border border-amber-500/40 bg-amber-200/35 px-2 py-1 text-xs text-amber-900 transition hover:border-amber-500 hover:text-amber-800"
                       >
                         回報
                       </button>
@@ -1904,13 +1904,13 @@ export function QAWorkbench() {
                           <>
                             <button
                               onClick={() => saveQA(row.id)}
-                              className={`${buttonBase} flex-1 bg-emerald-500 text-slate-950 hover:bg-emerald-400`}
+                              className={`${buttonBase} qa-mobile-action flex-1 bg-emerald-500 text-ink-900 hover:bg-emerald-400`}
                             >
                               儲存
                             </button>
                             <button
                               onClick={cancelEditing}
-                              className={`${buttonBase} flex-1 border border-slate-500 bg-surface-700 text-slate-200 hover:border-slate-300`}
+                              className={`${buttonBase} qa-mobile-action flex-1 border border-mist-500 bg-paper-300 text-ink-800 hover:border-mist-600`}
                             >
                               取消
                             </button>
@@ -1919,13 +1919,13 @@ export function QAWorkbench() {
                           <div className="grid w-full gap-2">
                             <button
                               onClick={() => startEditing(row)}
-                              className={`${buttonBase} w-full border border-slate-500 bg-surface-700 text-slate-100 hover:border-accent-400 hover:text-white`}
+                              className={`${buttonBase} qa-mobile-action w-full border border-mist-500 bg-paper-300 text-ink-900 hover:border-gold-500 hover:text-ink-900`}
                             >
                               修改題目/答案
                             </button>
                             <button
                               onClick={() => deleteRow(row)}
-                              className={`${buttonBase} w-full border border-rose-400/40 bg-rose-500/15 text-rose-200 hover:border-rose-300 hover:text-rose-100`}
+                  className={`${buttonBase} qa-mobile-action w-full border border-rose-500/40 bg-rose-200/40 text-rose-900 hover:border-rose-500 hover:text-rose-800`}
                             >
                               刪除
                             </button>
@@ -1943,13 +1943,13 @@ export function QAWorkbench() {
 
       {reportModalOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-surface-900 p-4 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-mist-300 bg-paper-100 p-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-100">匿名回報題庫錯誤</h2>
+              <h2 className="font-title text-sm font-semibold text-ink-900">匿名回報題庫錯誤</h2>
               <button
                 type="button"
                 onClick={closeReportModal}
-                className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:text-white"
+                className="rounded-md border border-mist-400 px-2 py-1 text-xs text-ink-700 hover:text-ink-900"
               >
                 關閉
               </button>
@@ -1957,52 +1957,52 @@ export function QAWorkbench() {
 
             <div className="mt-3 grid gap-2">
               <label className="grid gap-1 text-xs">
-                <span className="text-slate-400">目前題目</span>
+                <span className="text-mist-600">目前題目</span>
                 <textarea
                   value={reportCurrentQuestion}
                   readOnly={Boolean(reportTarget)}
                   onChange={(event) => setReportCurrentQuestion(event.target.value)}
                   placeholder="若非對應當前題目，可自行填寫"
-                  className="min-h-16 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200"
+                  className="min-h-16 rounded-lg border border-mist-300 bg-paper-200 p-2 text-ink-800"
                 />
               </label>
               <label className="grid gap-1 text-xs">
-                <span className="text-slate-400">目前答案</span>
+                <span className="text-mist-600">目前答案</span>
                 <textarea
                   value={reportCurrentAnswer}
                   readOnly={Boolean(reportTarget)}
                   onChange={(event) => setReportCurrentAnswer(event.target.value)}
                   placeholder="若非對應當前題目，可自行填寫"
-                  className="min-h-14 rounded-lg border border-slate-700 bg-surface-800 p-2 text-slate-200"
+                  className="min-h-14 rounded-lg border border-mist-300 bg-paper-200 p-2 text-ink-800"
                 />
               </label>
               <label className="grid gap-1 text-xs">
-                <span className="text-slate-400">建議題目（可選）</span>
+                <span className="text-mist-600">建議題目（可選）</span>
                 <input
                   value={reportSuggestedQuestion}
                   onChange={(event) => setReportSuggestedQuestion(event.target.value)}
-                  className="h-10 rounded-lg border border-slate-600 bg-surface-800 px-2 text-slate-100"
+                  className="h-10 rounded-lg border border-mist-400 bg-paper-200 px-2 text-ink-900"
                 />
               </label>
               <label className="grid gap-1 text-xs">
-                <span className="text-slate-400">建議答案（可選）</span>
+                <span className="text-mist-600">建議答案（可選）</span>
                 <input
                   value={reportSuggestedAnswer}
                   onChange={(event) => setReportSuggestedAnswer(event.target.value)}
-                  className="h-10 rounded-lg border border-slate-600 bg-surface-800 px-2 text-slate-100"
+                  className="h-10 rounded-lg border border-mist-400 bg-paper-200 px-2 text-ink-900"
                 />
               </label>
               <label className="grid gap-1 text-xs">
-                <span className="text-slate-400">備註原因（可選）</span>
+                <span className="text-mist-600">備註原因（可選）</span>
                 <textarea
                   value={reportNote}
                   onChange={(event) => setReportNote(event.target.value)}
-                  className="min-h-16 rounded-lg border border-slate-600 bg-surface-800 p-2 text-slate-100"
+                  className="min-h-16 rounded-lg border border-mist-400 bg-paper-200 p-2 text-ink-900"
                 />
               </label>
 
               {TURNSTILE_SITE_KEY ? (
-                <div className="rounded-lg border border-slate-700 bg-surface-800 p-2">
+                <div className="rounded-lg border border-mist-300 bg-paper-200 p-2">
                   <div ref={turnstileContainerRef} />
                 </div>
               ) : (
@@ -2011,7 +2011,7 @@ export function QAWorkbench() {
                   <input
                     value={reportTurnstileToken}
                     onChange={(event) => setReportTurnstileToken(event.target.value)}
-                    className="h-10 rounded-lg border border-slate-600 bg-surface-800 px-2 text-slate-100"
+                    className="h-10 rounded-lg border border-mist-400 bg-paper-200 px-2 text-ink-900"
                   />
                 </label>
               )}
@@ -2021,7 +2021,7 @@ export function QAWorkbench() {
               <button
                 type="button"
                 onClick={closeReportModal}
-                className={`${buttonBase} border border-slate-500 bg-surface-700 text-slate-200 hover:border-slate-300`}
+                className={`${buttonBase} border border-mist-500 bg-paper-300 text-ink-800 hover:border-mist-600`}
               >
                 取消
               </button>
@@ -2029,7 +2029,7 @@ export function QAWorkbench() {
                 type="button"
                 onClick={submitReport}
                 disabled={reportSubmitting}
-                className={`${buttonBase} bg-amber-500 text-slate-950 hover:bg-amber-400`}
+                className={`${buttonBase} bg-amber-500 text-ink-900 hover:bg-amber-400`}
               >
                 {reportSubmitting ? "送出中..." : "送出回報"}
               </button>
@@ -2038,26 +2038,26 @@ export function QAWorkbench() {
         </div>
       ) : null}
 
-      <aside className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-700/80 bg-surface-900/95 p-3 backdrop-blur lg:hidden">
+      <aside className="fixed bottom-0 left-0 right-0 z-30 border-t border-mist-300/90 bg-paper-100/95 p-3 backdrop-blur lg:hidden">
         <div className="flex w-full flex-col gap-2">
           <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
             <input
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
               placeholder="查詢關鍵字"
-              className="h-12 rounded-xl border border-slate-600 bg-surface-800 px-3 text-base text-slate-100 outline-none ring-accent-400 transition placeholder:text-slate-400 focus:ring-2"
+              className="qa-mobile-input h-12 rounded-xl border border-mist-400 bg-paper-200 px-3 text-base text-ink-900 outline-none ring-gold-500 transition placeholder:text-mist-600 focus:ring-2"
             />
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="h-12 rounded-xl border border-slate-500 bg-surface-700 px-3 text-sm text-slate-300 transition hover:border-slate-300 hover:text-white active:scale-95"
+              className="qa-mobile-action h-12 rounded-xl border border-mist-500 bg-paper-300 px-3 text-sm text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
             >
               清除
             </button>
             <button
               type="button"
               onClick={() => setMobileQuickDrawerOpen(true)}
-              className="h-12 rounded-xl border border-accent-400/70 bg-accent-500 px-3 text-sm font-semibold text-slate-950 transition active:scale-95"
+              className="qa-mobile-action h-12 rounded-xl border border-gold-500/70 bg-gold-500 px-3 text-sm font-semibold text-ink-900 transition active:scale-95"
             >
               快捷
             </button>
@@ -2072,7 +2072,7 @@ export function QAWorkbench() {
             searchInputRef.current?.focus();
             searchInputRef.current?.select();
           }}
-          className="fixed bottom-20 right-3 z-40 rounded-full border border-accent-400/70 bg-accent-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg active:scale-95 lg:hidden"
+          className="fixed bottom-20 right-3 z-40 rounded-full border border-gold-500/70 bg-gold-500 px-4 py-2 text-sm font-semibold text-ink-900 shadow-lg active:scale-95 lg:hidden"
         >
           回到查詢
         </button>
@@ -2086,13 +2086,13 @@ export function QAWorkbench() {
             className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
             aria-label="關閉快捷抽屜遮罩"
           />
-          <aside className="fixed right-0 top-0 z-50 h-screen w-[82vw] max-w-xs border-l border-slate-700/80 bg-surface-900 p-3 shadow-2xl lg:hidden">
+          <aside className="fixed right-0 top-0 z-50 h-screen w-[82vw] max-w-xs border-l border-mist-300/90 bg-paper-100 p-3 shadow-2xl lg:hidden">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-100">快捷面板</p>
+              <p className="text-sm font-semibold text-ink-900">快捷面板</p>
               <button
                 type="button"
                 onClick={() => setMobileQuickDrawerOpen(false)}
-                className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-300"
+                className="rounded-md border border-mist-400 px-2 py-1 text-xs text-ink-700"
               >
                 關閉
               </button>
@@ -2105,14 +2105,14 @@ export function QAWorkbench() {
                     setMobileQuickDrawerOpen(false);
                     openReportModal();
                   }}
-                  className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200"
+                  className="rounded-xl border border-amber-500/40 bg-amber-200/35 px-3 py-2 text-left text-xs text-amber-900"
                 >
                   題目不在結果？點這裡新增回報
                 </button>
               ) : null}
               {quickKeywordGroups.map((group) => (
                 <section key={`mobile-drawer-${group.title}`} className="grid gap-2">
-                  <p className="text-xs font-medium tracking-wide text-slate-400">{group.title}</p>
+                  <p className="text-xs font-medium tracking-wide text-mist-600">{group.title}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {group.items.map((keyword) => (
                       <button
@@ -2122,10 +2122,10 @@ export function QAWorkbench() {
                           setSearchKeyword(keyword.value);
                           setMobileQuickDrawerOpen(false);
                         }}
-                        className="h-9 rounded-lg border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200"
+                        className="h-9 rounded-lg border border-mist-400 bg-paper-200 px-2 text-xs text-ink-800"
                       >
                         {keyword.value}
-                        <span className="ml-1 text-slate-400">({keyword.count})</span>
+                        <span className="ml-1 text-mist-600">({keyword.count})</span>
                       </button>
                     ))}
                   </div>
@@ -2138,7 +2138,7 @@ export function QAWorkbench() {
       ) : null}
 
       <aside
-        className="fixed right-0 top-0 hidden h-screen border-l border-slate-700/80 bg-surface-900/95 p-4 backdrop-blur lg:block"
+        className="fixed right-0 top-0 hidden h-screen border-l border-mist-300/90 bg-paper-100/95 p-4 backdrop-blur lg:block"
         style={{ width: rightPanelWidth }}
       >
         <button
@@ -2151,24 +2151,24 @@ export function QAWorkbench() {
           className="absolute left-0 top-0 h-full w-2 -translate-x-1 cursor-col-resize bg-transparent"
         />
         <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
-          <p className="text-sm font-semibold tracking-wide text-slate-100">快捷面板</p>
+          <p className="text-sm font-semibold tracking-wide text-ink-900">快捷面板</p>
           {viewMode === "query" ? (
             <button
               type="button"
               onClick={() => openReportModal()}
-              className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-left text-xs text-amber-200 transition hover:border-amber-300 hover:text-amber-100 active:scale-95"
+              className="rounded-xl border border-amber-500/40 bg-amber-200/35 px-3 py-2 text-left text-xs text-amber-900 transition hover:border-amber-500 hover:text-amber-800 active:scale-95"
             >
               題目不在結果？點這裡新增回報
             </button>
           ) : null}
 
           {viewMode === "edit" && isAdminUnlocked ? (
-            <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
-            <p className="text-xs font-medium tracking-wide text-slate-300">批次補標（目前搜尋結果）</p>
+            <div className="grid gap-2 rounded-2xl border border-mist-300 bg-paper-200 p-3">
+            <p className="text-xs font-medium tracking-wide text-ink-700">批次補標（目前搜尋結果）</p>
             <select
               value={batchTagPreset}
               onChange={(event) => setBatchTagPreset(event.target.value)}
-              className="h-10 rounded-xl border border-slate-600 bg-surface-700 px-2 text-xs text-slate-100"
+              className="h-10 rounded-xl border border-mist-400 bg-paper-300 px-2 text-xs text-ink-900"
             >
               <option value="">選擇現有標記</option>
               {existingTags.map((item) => (
@@ -2181,23 +2181,23 @@ export function QAWorkbench() {
               value={batchCustomTag}
               onChange={(event) => setBatchCustomTag(event.target.value)}
               placeholder="或輸入自訂標記（可多個，|分隔）"
-              className="h-10 rounded-xl border border-slate-600 bg-surface-700 px-2 text-xs text-slate-100 outline-none ring-accent-400 focus:ring-2"
+              className="h-10 rounded-xl border border-mist-400 bg-paper-300 px-2 text-xs text-ink-900 outline-none ring-gold-500 focus:ring-2"
             />
             <button
               type="button"
               onClick={applyQuickBatchTag}
-              className={`${buttonBase} h-10 bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95`}
+              className={`${buttonBase} h-10 bg-emerald-500 text-ink-900 hover:bg-emerald-400 active:scale-95`}
             >
               套用到目前結果 ({displayRows.length})
             </button>
 
-            <div className="mt-1 grid gap-2 rounded-xl border border-slate-700 bg-surface-900 p-2">
-              <p className="text-[11px] text-slate-400">進階規則模式</p>
+            <div className="mt-1 grid gap-2 rounded-xl border border-mist-300 bg-paper-100 p-2">
+              <p className="text-[11px] text-mist-600">進階規則模式</p>
               <div className="grid grid-cols-2 gap-2">
                 <select
                   value={advancedField}
                   onChange={(event) => setAdvancedField(event.target.value as BatchField)}
-                  className="h-9 rounded-lg border border-slate-600 bg-surface-700 px-2 text-xs text-slate-100"
+                  className="h-9 rounded-lg border border-mist-400 bg-paper-300 px-2 text-xs text-ink-900"
                 >
                   <option value="all">題目+答案+標記</option>
                   <option value="question">題目</option>
@@ -2208,13 +2208,13 @@ export function QAWorkbench() {
                   value={advancedKeyword}
                   onChange={(event) => setAdvancedKeyword(event.target.value)}
                   placeholder="關鍵字"
-                  className="h-9 rounded-lg border border-slate-600 bg-surface-700 px-2 text-xs text-slate-100 outline-none ring-accent-400 focus:ring-2"
+                  className="h-9 rounded-lg border border-mist-400 bg-paper-300 px-2 text-xs text-ink-900 outline-none ring-gold-500 focus:ring-2"
                 />
               </div>
               <button
                 type="button"
                 onClick={applyAdvancedBatchTag}
-                className={`${buttonBase} h-9 border border-slate-500 bg-surface-700 text-xs text-slate-100 hover:border-accent-400 hover:text-white`}
+                className={`${buttonBase} h-9 border border-mist-500 bg-paper-300 text-xs text-ink-900 hover:border-gold-500 hover:text-ink-900`}
               >
                 套用進階規則 ({advancedMatchedRows.length})
               </button>
@@ -2223,58 +2223,58 @@ export function QAWorkbench() {
           ) : null}
 
           {viewMode === "edit" ? (
-            <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
-              <p className="text-xs font-medium tracking-wide text-slate-300">社群回報待審</p>
+            <div className="grid gap-2 rounded-2xl border border-mist-300 bg-paper-200 p-3">
+              <p className="text-xs font-medium tracking-wide text-ink-700">社群回報待審</p>
               <input
                 type="password"
                 autoComplete="off"
                 value={adminApiKey}
                 onChange={(event) => setAdminApiKey(event.target.value)}
                 placeholder="管理 API Key"
-                className="h-9 rounded-lg border border-slate-600 bg-surface-700 px-2 text-xs text-slate-100 outline-none ring-accent-400 focus:ring-2"
+                className="h-9 rounded-lg border border-mist-400 bg-paper-300 px-2 text-xs text-ink-900 outline-none ring-gold-500 focus:ring-2"
               />
               <button
                 type="button"
                 onClick={loadAdminReports}
                 disabled={adminReportsLoading}
-                className={`${buttonBase} h-9 border border-slate-500 bg-surface-700 text-xs text-slate-100 hover:border-accent-400 hover:text-white`}
+                className={`${buttonBase} h-9 border border-mist-500 bg-paper-300 text-xs text-ink-900 hover:border-gold-500 hover:text-ink-900`}
               >
                 {adminReportsLoading ? "載入中..." : `刷新待審 (${adminReports.length})`}
               </button>
               <div className="grid max-h-56 gap-2 overflow-y-auto">
                 {adminReports.map((report) => (
-                  <div key={`report-${report.id}`} className="rounded-lg border border-slate-700 bg-surface-900 p-2">
-                    <p className="line-clamp-2 text-xs text-slate-200">{report.current_question}</p>
-                    <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">
+                  <div key={`report-${report.id}`} className="rounded-lg border border-mist-300 bg-paper-100 p-2">
+                    <p className="line-clamp-2 text-xs text-ink-800">{report.current_question}</p>
+                    <p className="mt-1 line-clamp-1 text-[11px] text-mist-600">
                       建議：{report.suggested_question || "(未填)"} / {report.suggested_answer || "(未填)"}
                     </p>
-                    {report.note ? <p className="mt-1 line-clamp-2 text-[11px] text-slate-400">備註：{report.note}</p> : null}
+                    {report.note ? <p className="mt-1 line-clamp-2 text-[11px] text-mist-600">備註：{report.note}</p> : null}
                     <div className="mt-2 flex gap-1">
                       <button
                         type="button"
                         onClick={() => resolveReportAction(report.id, "accept")}
-                        className="flex-1 rounded-md border border-emerald-400/30 bg-emerald-500/20 px-2 py-1 text-[11px] text-emerald-200"
+                        className="flex-1 rounded-md border border-emerald-500/40 bg-emerald-200/55 px-2 py-1 text-[11px] text-emerald-900"
                       >
                         採納
                       </button>
                       <button
                         type="button"
                         onClick={() => resolveReportAction(report.id, "reject")}
-                        className="flex-1 rounded-md border border-rose-400/30 bg-rose-500/20 px-2 py-1 text-[11px] text-rose-200"
+                        className="flex-1 rounded-md border border-rose-500/40 bg-rose-200/45 px-2 py-1 text-[11px] text-rose-900"
                       >
                         駁回
                       </button>
                     </div>
                   </div>
                 ))}
-                {adminReports.length === 0 ? <p className="text-xs text-slate-500">目前沒有待審回報</p> : null}
+                {adminReports.length === 0 ? <p className="text-xs text-mist-500">目前沒有待審回報</p> : null}
               </div>
             </div>
           ) : null}
 
 
-          <div className="grid gap-2 rounded-2xl border border-slate-700 bg-surface-800 p-3">
-            <p className="text-xs font-medium tracking-wide text-slate-300">詩詞2字（重複片段）</p>
+          <div className="grid gap-2 rounded-2xl border border-mist-300 bg-paper-200 p-3">
+            <p className="text-xs font-medium tracking-wide text-ink-700">詩詞2字（重複片段）</p>
             <div className="grid grid-cols-4 gap-2">
               {poetryBigramStats.map((item) => (
                 <button
@@ -2286,12 +2286,12 @@ export function QAWorkbench() {
                   }}
                   className={`h-9 rounded-lg border px-1 text-xs transition active:scale-95 ${
                     selectedBigram === item.token
-                      ? "border-accent-400 bg-accent-500/20 text-white"
-                      : "border-slate-600 bg-surface-700 text-slate-200 hover:border-accent-400 hover:text-white"
+                      ? "border-gold-500 bg-gold-500/20 text-ink-900"
+                      : "border-mist-400 bg-paper-300 text-ink-800 hover:border-gold-500 hover:text-ink-900"
                   }`}
                 >
                   {item.token}
-                  <span className="ml-1 text-slate-400">({item.count})</span>
+                  <span className="ml-1 text-mist-600">({item.count})</span>
                 </button>
               ))}
             </div>
@@ -2300,7 +2300,7 @@ export function QAWorkbench() {
                 type="button"
                 onClick={applySelectedBigramTag}
                 disabled={!selectedBigram}
-                className={`${buttonBase} h-9 border border-slate-500 bg-surface-700 text-xs text-slate-100 hover:border-accent-400 hover:text-white`}
+                className={`${buttonBase} h-9 border border-mist-500 bg-paper-300 text-xs text-ink-900 hover:border-gold-500 hover:text-ink-900`}
               >
                 將「{selectedBigram || "2字片段"}」批次寫入標記
               </button>
@@ -2310,17 +2310,17 @@ export function QAWorkbench() {
           <div className="grid gap-3">
             {sideQuickGroups.map((group) => (
               <section key={group.title} className="grid gap-2">
-                <p className="text-xs font-medium tracking-wide text-slate-400">{group.title}</p>
+                <p className="text-xs font-medium tracking-wide text-mist-600">{group.title}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {group.items.map((keyword) => (
                     <button
                       key={keyword.value}
                       type="button"
                       onClick={() => setSearchKeyword(keyword.value)}
-                      className="h-10 rounded-xl border border-slate-600 bg-surface-800 px-2 text-xs text-slate-200 transition hover:border-accent-400 hover:text-white active:scale-95"
+                      className="h-10 rounded-xl border border-mist-400 bg-paper-200 px-2 text-xs text-ink-800 transition hover:border-gold-500 hover:text-ink-900 active:scale-95"
                     >
                       {keyword.value}
-                      <span className="ml-1 text-slate-400">({keyword.count})</span>
+                      <span className="ml-1 text-mist-600">({keyword.count})</span>
                     </button>
                   ))}
                 </div>
