@@ -1478,7 +1478,7 @@ export function QAWorkbench() {
               <button
                 type="button"
                 onClick={() => openReportModal()}
-                className="rounded-lg border border-amber-500/40 bg-amber-200/35 px-2.5 py-1 text-[11px] text-amber-900 transition hover:border-amber-500 hover:text-amber-800 active:scale-95"
+                className="hidden rounded-lg border border-amber-500/40 bg-amber-200/35 px-2.5 py-1 text-[11px] text-amber-900 transition hover:border-amber-500 hover:text-amber-800 active:scale-95 md:inline-flex"
               >
                 新增回報
               </button>
@@ -1833,13 +1833,22 @@ export function QAWorkbench() {
               </table>
             </div>
 
-            <div className="grid gap-2 md:hidden">
+            <div className="grid gap-1.5 md:hidden">
               {displayRows.map((row) => {
                 const isEditing = editingRowId === row.id;
                 const tags = parseTags(row.tag);
 
                 return (
-                  <article key={`card-${row.id}`} className="rounded-xl border border-mist-300 bg-paper-200 p-3">
+                  <article key={`card-${row.id}`} className="relative rounded-xl border border-mist-300 bg-paper-200 p-2.5">
+                    {viewMode === "query" ? (
+                      <button
+                        type="button"
+                        onClick={() => openReportModal(row)}
+                        className="qa-mobile-action absolute right-2 top-2 rounded-md border border-amber-500/40 bg-amber-200/35 px-2 py-1 text-[11px] text-amber-900 transition hover:border-amber-500 hover:text-amber-800"
+                      >
+                        回報
+                      </button>
+                    ) : null}
                     {isEditing ? (
                       <textarea
                         value={draftQuestion}
@@ -1847,7 +1856,9 @@ export function QAWorkbench() {
                         className="qa-mobile-input mt-1 min-h-20 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[18px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="qa-mobile-card-question text-base leading-6 text-ink-900">{row.question || <span className="text-mist-500">(空白)</span>}</p>
+                      <p className="qa-mobile-card-question line-clamp-2 pr-14 text-base leading-6 text-ink-900">
+                        {row.question || <span className="text-mist-500">(空白)</span>}
+                      </p>
                     )}
 
                     {isEditing ? (
@@ -1857,7 +1868,9 @@ export function QAWorkbench() {
                         className="qa-mobile-input mt-1 min-h-24 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[17px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="qa-mobile-card-answer mt-1 text-sm leading-6 text-ink-700">{row.answer || <span className="text-mist-500">(空白)</span>}</p>
+                      <p className="qa-mobile-card-answer line-clamp-2 mt-0.5 text-sm leading-6 text-ink-700">
+                        {row.answer || <span className="text-mist-500">(空白)</span>}
+                      </p>
                     )}
 
                     {isEditing ? (
@@ -1867,7 +1880,7 @@ export function QAWorkbench() {
                         placeholder="例如：對聯|借問"
                         className="qa-mobile-input mt-1 h-10 w-full rounded-xl border border-mist-400 bg-paper-300 px-3 text-sm text-ink-900 outline-none ring-gold-500 focus:ring-2"
                       />
-                    ) : tags.length > 0 ? (
+                    ) : viewMode === "edit" ? tags.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {tags.map((tag) => (
                           <span
@@ -1887,15 +1900,6 @@ export function QAWorkbench() {
                       </div>
                     ) : (
                       <p className="mt-2 text-xs text-mist-500">(未標記)</p>
-                    )}
-                    {viewMode === "query" ? (
-                      <button
-                        type="button"
-                        onClick={() => openReportModal(row)}
-                        className="qa-mobile-action mt-2 rounded-lg border border-amber-500/40 bg-amber-200/35 px-2 py-1 text-xs text-amber-900 transition hover:border-amber-500 hover:text-amber-800"
-                      >
-                        回報
-                      </button>
                     ) : null}
 
                     {viewMode === "edit" && isAdminUnlocked ? (
@@ -2098,18 +2102,6 @@ export function QAWorkbench() {
               </button>
             </div>
             <div className="mt-3 grid max-h-[85vh] gap-3 overflow-y-auto pr-1">
-              {viewMode === "query" ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileQuickDrawerOpen(false);
-                    openReportModal();
-                  }}
-                  className="rounded-xl border border-amber-500/40 bg-amber-200/35 px-3 py-2 text-left text-xs text-amber-900"
-                >
-                  題目不在結果？點這裡新增回報
-                </button>
-              ) : null}
               {quickKeywordGroups.map((group) => (
                 <section key={`mobile-drawer-${group.title}`} className="grid gap-2">
                   <p className="text-xs font-medium tracking-wide text-mist-600">{group.title}</p>
