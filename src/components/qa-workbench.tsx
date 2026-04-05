@@ -1446,7 +1446,7 @@ export function QAWorkbench() {
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="h-11 rounded-xl border border-mist-500 bg-paper-300 px-3 text-xs text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
+              className="h-11 min-w-[88px] rounded-xl border border-mist-500 bg-paper-300 px-3 text-xs text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
             >
               清除
             </button>
@@ -1856,7 +1856,7 @@ export function QAWorkbench() {
                         className="qa-mobile-input mt-1 min-h-20 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[18px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="qa-mobile-card-question line-clamp-2 pr-14 text-base leading-6 text-ink-900">
+                      <p className="qa-mobile-card-question line-clamp-2 pr-14 text-sm leading-5 text-ink-700">
                         {row.question || <span className="text-mist-500">(空白)</span>}
                       </p>
                     )}
@@ -1868,7 +1868,7 @@ export function QAWorkbench() {
                         className="qa-mobile-input mt-1 min-h-24 w-full rounded-xl border border-mist-400 bg-paper-300 p-2 text-sm outline-none ring-gold-500 focus:ring-2 max-[430px]:text-[17px] max-[430px]:leading-8"
                       />
                     ) : (
-                      <p className="qa-mobile-card-answer line-clamp-2 mt-0.5 text-sm leading-6 text-ink-700">
+                      <p className="qa-mobile-card-answer line-clamp-2 mt-0.5 text-[17px] font-medium leading-6 text-ink-900">
                         {row.answer || <span className="text-mist-500">(空白)</span>}
                       </p>
                     )}
@@ -2054,7 +2054,7 @@ export function QAWorkbench() {
             <button
               type="button"
               onClick={() => setSearchKeyword("")}
-              className="qa-mobile-action h-12 rounded-xl border border-mist-500 bg-paper-300 px-3 text-sm text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
+              className="qa-mobile-action h-12 min-w-[96px] rounded-xl border border-mist-500 bg-paper-300 px-3 text-sm text-ink-700 transition hover:border-mist-600 hover:text-ink-900 active:scale-95"
             >
               清除
             </button>

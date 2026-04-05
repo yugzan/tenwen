@@ -62,13 +62,13 @@ body::after {
 
 @media (max-width: 430px) {
   .qa-mobile-card-question {
-    font-size: 20px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.45;
   }
 
   .qa-mobile-card-answer {
-    font-size: 18px;
-    line-height: 1.7;
+    font-size: 17px;
+    line-height: 1.55;
   }
 
   .qa-mobile-input {
